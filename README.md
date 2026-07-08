@@ -1,6 +1,6 @@
 # ✂️ SnipKlip
 
-Owned by Swapnil Wankhede <swapnil@example.com>.
+Owned by Swapnil Wankhede.
 
 **Empowering salons to grow smarter, faster, and digitally.**
 
