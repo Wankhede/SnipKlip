@@ -1,0 +1,100 @@
+    1  sudo /etc/systemd/system/
+    2  cd  /etc/systemd/system/
+    3  ls
+    4  sudo vi gunicorn.service
+    5  sudo vi stag.service
+    6  sudo vi gunicorn.socket
+    7  sudo vi stag.socket
+    8  clear
+    9  sudo systemctl start gunicorn
+   10  sudo systemctl enable gunicorn
+   11  sudo systemctl start stag
+   12  sudo systemctl enable stag
+   30  cd /etc/nginx/sites-available/
+   31  cat webapp 
+   32  cat staging 
+   33  sudo ln -s /etc/nginx/sites-available/webapp /etc/nginx/sites-enabled
+   34  sudo ln -s /etc/nginx/sites-available/staging /etc/nginx/sites-enabled
+   35  sudo nginx -t
+   36  sudo systemctl restart nginx
+   37  sudo ufw delete allow 8000
+   38  sudo ufw allow 'Nginx Full'
+   39  sudo systemctl start postgresql
+   40  sudo systemctl enable postgresql
+   41  sudo systemctl daemon-reload
+   42  sudo systemctl restart gunicorn
+   43  sudo nginx -t && sudo systemctl restart nginx
+
+
+    [Unit]
+    Description=gunicorn daemon
+    Requires=gunicorn.socket
+    After=network.target
+
+    [Service]
+    User=ubuntu
+    Group=ubuntu
+    WorkingDirectory=/home/ubuntu/snipklip
+    ExecStart=/home/ubuntu/penv/bin/gunicorn \
+            --access-logfile - \
+            --workers 3 \
+            --bind unix:/run/gunicorn.sock \
+            app.wsgi:application
+
+    [Install]
+    WantedBy=multi-user.target
+
+    ubuntu@ip-172-31-19-139:/etc/systemd/system$ cat stag.service 
+    [Unit]
+    Description=gunicorn daemon
+    Requires=stag.socket
+    After=network.target
+
+    [Service]
+    User=ubuntu
+    Group=ubuntu
+    WorkingDirectory=/home/ubuntu/staging/snipklip
+    ExecStart=/home/ubuntu/senv/bin/gunicorn \
+            --access-logfile - \
+            --workers 3 \
+            --bind unix:/run/stag.sock \
+            app.wsgi:application
+
+    [Install]
+    WantedBy=multi-user.target
+   server {
+    server_name snipklip.in;
+
+    location = /favicon.ico { access_log off; log_not_found off; }
+    location /static/ {
+        root /home/ubuntu/snipklip;
+    }
+    location /staticfiles/ {
+        alias /home/ubuntu/snipklip/staticfiles/;
+    }
+    location / {
+        include proxy_params;
+        proxy_pass http://unix:/run/gunicorn.sock;
+    }
+}
+
+ubuntu@ip-172-31-19-139:/etc/nginx/sites-available$ cat staging 
+server {
+    listen 8083;
+    server_name stag.snipklip.in;
+
+    location = /favicon.ico { access_log off; log_not_found off; }
+    location /static/ {
+        root /home/ubuntu/staging/snipklip;
+    }
+    location /staticfiles/ {
+        alias /home/ubuntu/staging/snipklip/staticfiles/;
+    }
+    location / {
+        include proxy_params;
+        proxy_pass http://unix:/run/stag.sock;
+    }
+}
+sudo apt install python3-certbot-nginx
+sudo certbot --nginx -d snipklip.in
+sudo certbot --nginx -d stag.snipklip.in

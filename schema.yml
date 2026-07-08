@@ -1,0 +1,1454 @@
+openapi: 3.0.3
+info:
+  title: Django REST API
+  version: 0.0.0
+paths:
+  /:
+    get:
+      operationId: root_retrieve
+      security:
+      - cookieAuth: []
+      - basicAuth: []
+      - {}
+      responses:
+        '200':
+          description: No response body
+    post:
+      operationId: root_create
+      security:
+      - cookieAuth: []
+      - basicAuth: []
+      - {}
+      responses:
+        '200':
+          description: No response body
+  /a1/:
+    get:
+      operationId: a1_retrieve
+      tags:
+      - a1
+      security:
+      - cookieAuth: []
+      - basicAuth: []
+      - {}
+      responses:
+        '200':
+          description: No response body
+  /a2/:
+    get:
+      operationId: a2_retrieve
+      tags:
+      - a2
+      security:
+      - cookieAuth: []
+      - basicAuth: []
+      - {}
+      responses:
+        '200':
+          description: No response body
+  /a3/:
+    get:
+      operationId: a3_retrieve
+      tags:
+      - a3
+      security:
+      - cookieAuth: []
+      - basicAuth: []
+      - {}
+      responses:
+        '200':
+          description: No response body
+  /a4/:
+    get:
+      operationId: a4_retrieve
+      tags:
+      - a4
+      security:
+      - cookieAuth: []
+      - basicAuth: []
+      - {}
+      responses:
+        '200':
+          description: No response body
+  /a5/:
+    get:
+      operationId: a5_retrieve
+      tags:
+      - a5
+      security:
+      - cookieAuth: []
+      - basicAuth: []
+      - {}
+      responses:
+        '200':
+          description: No response body
+  /a6/:
+    get:
+      operationId: a6_retrieve
+      tags:
+      - a6
+      security:
+      - cookieAuth: []
+      - basicAuth: []
+      - {}
+      responses:
+        '200':
+          description: No response body
+  /about-us/:
+    get:
+      operationId: about_us_retrieve
+      tags:
+      - about-us
+      security:
+      - cookieAuth: []
+      - basicAuth: []
+      - {}
+      responses:
+        '200':
+          description: No response body
+    post:
+      operationId: about_us_create
+      tags:
+      - about-us
+      security:
+      - cookieAuth: []
+      - basicAuth: []
+      - {}
+      responses:
+        '200':
+          description: No response body
+  /add-bookings/:
+    get:
+      operationId: add_bookings_retrieve
+      tags:
+      - add-bookings
+      security:
+      - cookieAuth: []
+      - basicAuth: []
+      responses:
+        '200':
+          description: No response body
+    post:
+      operationId: add_bookings_create
+      tags:
+      - add-bookings
+      security:
+      - cookieAuth: []
+      - basicAuth: []
+      responses:
+        '200':
+          description: No response body
+  /add-customers/:
+    get:
+      operationId: add_customers_retrieve
+      tags:
+      - add-customers
+      security:
+      - cookieAuth: []
+      - basicAuth: []
+      responses:
+        '200':
+          description: No response body
+    post:
+      operationId: add_customers_create
+      tags:
+      - add-customers
+      security:
+      - cookieAuth: []
+      - basicAuth: []
+      responses:
+        '200':
+          description: No response body
+  /add-employee/:
+    get:
+      operationId: add_employee_retrieve
+      tags:
+      - add-employee
+      security:
+      - cookieAuth: []
+      - basicAuth: []
+      responses:
+        '200':
+          description: No response body
+    post:
+      operationId: add_employee_create
+      tags:
+      - add-employee
+      security:
+      - cookieAuth: []
+      - basicAuth: []
+      responses:
+        '200':
+          description: No response body
+  /add-expenses/:
+    get:
+      operationId: add_expenses_retrieve
+      tags:
+      - add-expenses
+      security:
+      - cookieAuth: []
+      - basicAuth: []
+      responses:
+        '200':
+          description: No response body
+    post:
+      operationId: add_expenses_create
+      tags:
+      - add-expenses
+      security:
+      - cookieAuth: []
+      - basicAuth: []
+      responses:
+        '200':
+          description: No response body
+  /add-leave/:
+    get:
+      operationId: add_leave_retrieve
+      tags:
+      - add-leave
+      security:
+      - cookieAuth: []
+      - basicAuth: []
+      responses:
+        '200':
+          description: No response body
+    post:
+      operationId: add_leave_create
+      tags:
+      - add-leave
+      security:
+      - cookieAuth: []
+      - basicAuth: []
+      responses:
+        '200':
+          description: No response body
+  /add-listings/:
+    get:
+      operationId: add_listings_retrieve
+      tags:
+      - add-listings
+      security:
+      - cookieAuth: []
+      - basicAuth: []
+      responses:
+        '200':
+          description: No response body
+    post:
+      operationId: add_listings_create
+      tags:
+      - add-listings
+      security:
+      - cookieAuth: []
+      - basicAuth: []
+      responses:
+        '200':
+          description: No response body
+  /add-membership/:
+    get:
+      operationId: add_membership_retrieve
+      tags:
+      - add-membership
+      security:
+      - cookieAuth: []
+      - basicAuth: []
+      responses:
+        '200':
+          description: No response body
+    post:
+      operationId: add_membership_create
+      tags:
+      - add-membership
+      security:
+      - cookieAuth: []
+      - basicAuth: []
+      responses:
+        '200':
+          description: No response body
+  /add-new-appointment/{invoice_transaction}/:
+    get:
+      operationId: add_new_appointment_retrieve
+      parameters:
+      - in: path
+        name: invoice_transaction
+        schema:
+          type: string
+        required: true
+      tags:
+      - add-new-appointment
+      security:
+      - cookieAuth: []
+      - basicAuth: []
+      responses:
+        '200':
+          description: No response body
+    post:
+      operationId: add_new_appointment_create
+      parameters:
+      - in: path
+        name: invoice_transaction
+        schema:
+          type: string
+        required: true
+      tags:
+      - add-new-appointment
+      security:
+      - cookieAuth: []
+      - basicAuth: []
+      responses:
+        '200':
+          description: No response body
+  /add-products/:
+    get:
+      operationId: add_products_retrieve
+      tags:
+      - add-products
+      security:
+      - cookieAuth: []
+      - basicAuth: []
+      responses:
+        '200':
+          description: No response body
+    post:
+      operationId: add_products_create
+      tags:
+      - add-products
+      security:
+      - cookieAuth: []
+      - basicAuth: []
+      responses:
+        '200':
+          description: No response body
+  /add-salary/{employee_id}/{branch_id}/:
+    get:
+      operationId: add_salary_retrieve
+      parameters:
+      - in: path
+        name: branch_id
+        schema:
+          type: integer
+        required: true
+      - in: path
+        name: employee_id
+        schema:
+          type: integer
+        required: true
+      tags:
+      - add-salary
+      security:
+      - cookieAuth: []
+      - basicAuth: []
+      responses:
+        '200':
+          description: No response body
+    post:
+      operationId: add_salary_create
+      parameters:
+      - in: path
+        name: branch_id
+        schema:
+          type: integer
+        required: true
+      - in: path
+        name: employee_id
+        schema:
+          type: integer
+        required: true
+      tags:
+      - add-salary
+      security:
+      - cookieAuth: []
+      - basicAuth: []
+      responses:
+        '200':
+          description: No response body
+  /billing/:
+    get:
+      operationId: billing_retrieve
+      tags:
+      - billing
+      security:
+      - cookieAuth: []
+      - basicAuth: []
+      responses:
+        '200':
+          description: No response body
+    post:
+      operationId: billing_create
+      tags:
+      - billing
+      security:
+      - cookieAuth: []
+      - basicAuth: []
+      responses:
+        '200':
+          description: No response body
+  /billings/:
+    get:
+      operationId: billings_retrieve
+      tags:
+      - billings
+      security:
+      - cookieAuth: []
+      - basicAuth: []
+      responses:
+        '200':
+          description: No response body
+    post:
+      operationId: billings_create
+      tags:
+      - billings
+      security:
+      - cookieAuth: []
+      - basicAuth: []
+      responses:
+        '200':
+          description: No response body
+  /blogs/:
+    get:
+      operationId: blogs_retrieve
+      tags:
+      - blogs
+      security:
+      - cookieAuth: []
+      - basicAuth: []
+      - {}
+      responses:
+        '200':
+          description: No response body
+    post:
+      operationId: blogs_create
+      tags:
+      - blogs
+      security:
+      - cookieAuth: []
+      - basicAuth: []
+      - {}
+      responses:
+        '200':
+          description: No response body
+  /booking-detail/{userid}/{username}/{order_id}/:
+    get:
+      operationId: booking_detail_retrieve
+      parameters:
+      - in: path
+        name: order_id
+        schema:
+          type: string
+        required: true
+      - in: path
+        name: userid
+        schema:
+          type: integer
+        required: true
+      - in: path
+        name: username
+        schema:
+          type: string
+        required: true
+      tags:
+      - booking-detail
+      security:
+      - cookieAuth: []
+      - basicAuth: []
+      responses:
+        '200':
+          description: No response body
+    post:
+      operationId: booking_detail_create
+      parameters:
+      - in: path
+        name: order_id
+        schema:
+          type: string
+        required: true
+      - in: path
+        name: userid
+        schema:
+          type: integer
+        required: true
+      - in: path
+        name: username
+        schema:
+          type: string
+        required: true
+      tags:
+      - booking-detail
+      security:
+      - cookieAuth: []
+      - basicAuth: []
+      responses:
+        '200':
+          description: No response body
+  /bookings/:
+    get:
+      operationId: bookings_retrieve
+      tags:
+      - bookings
+      security:
+      - cookieAuth: []
+      - basicAuth: []
+      responses:
+        '200':
+          description: No response body
+    post:
+      operationId: bookings_create
+      tags:
+      - bookings
+      security:
+      - cookieAuth: []
+      - basicAuth: []
+      responses:
+        '200':
+          description: No response body
+  /calendar/:
+    get:
+      operationId: calendar_retrieve
+      description: |-
+        A view that returns the bookings for a salon, based on the user's permissions and preferences.
+        :param request: HTTP request object
+        :return: HTTP response object with context variables
+      tags:
+      - calendar
+      security:
+      - cookieAuth: []
+      - basicAuth: []
+      responses:
+        '200':
+          description: No response body
+    post:
+      operationId: calendar_create
+      tags:
+      - calendar
+      security:
+      - cookieAuth: []
+      - basicAuth: []
+      responses:
+        '200':
+          description: No response body
+  /changelog/:
+    get:
+      operationId: changelog_retrieve
+      tags:
+      - changelog
+      security:
+      - cookieAuth: []
+      - basicAuth: []
+      responses:
+        '200':
+          description: No response body
+  /customer-detail-edit/{user_id}/{user_name}/:
+    get:
+      operationId: customer_detail_edit_retrieve
+      parameters:
+      - in: path
+        name: user_id
+        schema:
+          type: integer
+        required: true
+      - in: path
+        name: user_name
+        schema:
+          type: string
+        required: true
+      tags:
+      - customer-detail-edit
+      security:
+      - cookieAuth: []
+      - basicAuth: []
+      responses:
+        '200':
+          description: No response body
+    post:
+      operationId: customer_detail_edit_create
+      parameters:
+      - in: path
+        name: user_id
+        schema:
+          type: integer
+        required: true
+      - in: path
+        name: user_name
+        schema:
+          type: string
+        required: true
+      tags:
+      - customer-detail-edit
+      security:
+      - cookieAuth: []
+      - basicAuth: []
+      responses:
+        '200':
+          description: No response body
+  /customer-detail/{user_id}/{user_name}/:
+    get:
+      operationId: customer_detail_retrieve
+      parameters:
+      - in: path
+        name: user_id
+        schema:
+          type: integer
+        required: true
+      - in: path
+        name: user_name
+        schema:
+          type: string
+        required: true
+      tags:
+      - customer-detail
+      security:
+      - cookieAuth: []
+      - basicAuth: []
+      responses:
+        '200':
+          description: No response body
+    post:
+      operationId: customer_detail_create
+      parameters:
+      - in: path
+        name: user_id
+        schema:
+          type: integer
+        required: true
+      - in: path
+        name: user_name
+        schema:
+          type: string
+        required: true
+      tags:
+      - customer-detail
+      security:
+      - cookieAuth: []
+      - basicAuth: []
+      responses:
+        '200':
+          description: No response body
+  /customers/:
+    get:
+      operationId: customers_retrieve
+      tags:
+      - customers
+      security:
+      - cookieAuth: []
+      - basicAuth: []
+      responses:
+        '200':
+          description: No response body
+    post:
+      operationId: customers_create
+      tags:
+      - customers
+      security:
+      - cookieAuth: []
+      - basicAuth: []
+      responses:
+        '200':
+          description: No response body
+  /dashboard/:
+    get:
+      operationId: dashboard_retrieve
+      description: |-
+        A view that returns the bookings for a salon, based on the user's permissions and preferences.
+        :param request: HTTP request object
+        :return: HTTP response object with context variables
+      tags:
+      - dashboard
+      security:
+      - cookieAuth: []
+      - basicAuth: []
+      responses:
+        '200':
+          description: No response body
+    post:
+      operationId: dashboard_create
+      tags:
+      - dashboard
+      security:
+      - cookieAuth: []
+      - basicAuth: []
+      responses:
+        '200':
+          description: No response body
+  /edit-employee/{employee_id}/:
+    get:
+      operationId: edit_employee_retrieve
+      parameters:
+      - in: path
+        name: employee_id
+        schema:
+          type: integer
+        required: true
+      tags:
+      - edit-employee
+      security:
+      - cookieAuth: []
+      - basicAuth: []
+      responses:
+        '200':
+          description: No response body
+    post:
+      operationId: edit_employee_create
+      parameters:
+      - in: path
+        name: employee_id
+        schema:
+          type: integer
+        required: true
+      tags:
+      - edit-employee
+      security:
+      - cookieAuth: []
+      - basicAuth: []
+      responses:
+        '200':
+          description: No response body
+  /edit-invoice/{invoice_transaction}/:
+    get:
+      operationId: edit_invoice_retrieve
+      parameters:
+      - in: path
+        name: invoice_transaction
+        schema:
+          type: string
+        required: true
+      tags:
+      - edit-invoice
+      security:
+      - cookieAuth: []
+      - basicAuth: []
+      responses:
+        '200':
+          description: No response body
+    post:
+      operationId: edit_invoice_create
+      parameters:
+      - in: path
+        name: invoice_transaction
+        schema:
+          type: string
+        required: true
+      tags:
+      - edit-invoice
+      security:
+      - cookieAuth: []
+      - basicAuth: []
+      responses:
+        '200':
+          description: No response body
+  /employee/:
+    get:
+      operationId: employee_retrieve
+      tags:
+      - employee
+      security:
+      - cookieAuth: []
+      - basicAuth: []
+      responses:
+        '200':
+          description: No response body
+    post:
+      operationId: employee_create
+      tags:
+      - employee
+      security:
+      - cookieAuth: []
+      - basicAuth: []
+      responses:
+        '200':
+          description: No response body
+  /employee-detail/{user_id}/{user_name}/:
+    get:
+      operationId: employee_detail_retrieve
+      parameters:
+      - in: path
+        name: user_id
+        schema:
+          type: integer
+        required: true
+      - in: path
+        name: user_name
+        schema:
+          type: string
+        required: true
+      tags:
+      - employee-detail
+      security:
+      - cookieAuth: []
+      - basicAuth: []
+      responses:
+        '200':
+          description: No response body
+    post:
+      operationId: employee_detail_create
+      parameters:
+      - in: path
+        name: user_id
+        schema:
+          type: integer
+        required: true
+      - in: path
+        name: user_name
+        schema:
+          type: string
+        required: true
+      tags:
+      - employee-detail
+      security:
+      - cookieAuth: []
+      - basicAuth: []
+      responses:
+        '200':
+          description: No response body
+  /expenses/:
+    get:
+      operationId: expenses_retrieve
+      tags:
+      - expenses
+      security:
+      - cookieAuth: []
+      - basicAuth: []
+      responses:
+        '200':
+          description: No response body
+    post:
+      operationId: expenses_create
+      tags:
+      - expenses
+      security:
+      - cookieAuth: []
+      - basicAuth: []
+      responses:
+        '200':
+          description: No response body
+  /faq/:
+    get:
+      operationId: faq_retrieve
+      tags:
+      - faq
+      security:
+      - cookieAuth: []
+      - basicAuth: []
+      - {}
+      responses:
+        '200':
+          description: No response body
+    post:
+      operationId: faq_create
+      tags:
+      - faq
+      security:
+      - cookieAuth: []
+      - basicAuth: []
+      - {}
+      responses:
+        '200':
+          description: No response body
+  /five-reasons-why-you-need-salon-software/:
+    get:
+      operationId: five_reasons_why_you_need_salon_software_retrieve
+      tags:
+      - five-reasons-why-you-need-salon-software
+      security:
+      - cookieAuth: []
+      - basicAuth: []
+      - {}
+      responses:
+        '200':
+          description: No response body
+    post:
+      operationId: five_reasons_why_you_need_salon_software_create
+      tags:
+      - five-reasons-why-you-need-salon-software
+      security:
+      - cookieAuth: []
+      - basicAuth: []
+      - {}
+      responses:
+        '200':
+          description: No response body
+  /hiring-management-101-salon-staff-hiring/:
+    get:
+      operationId: hiring_management_101_salon_staff_hiring_retrieve
+      tags:
+      - hiring-management-101-salon-staff-hiring
+      security:
+      - cookieAuth: []
+      - basicAuth: []
+      - {}
+      responses:
+        '200':
+          description: No response body
+    post:
+      operationId: hiring_management_101_salon_staff_hiring_create
+      tags:
+      - hiring-management-101-salon-staff-hiring
+      security:
+      - cookieAuth: []
+      - basicAuth: []
+      - {}
+      responses:
+        '200':
+          description: No response body
+  /import-export-data/:
+    get:
+      operationId: import_export_data_retrieve
+      tags:
+      - import-export-data
+      security:
+      - cookieAuth: []
+      - basicAuth: []
+      responses:
+        '200':
+          description: No response body
+    post:
+      operationId: import_export_data_create
+      tags:
+      - import-export-data
+      security:
+      - cookieAuth: []
+      - basicAuth: []
+      responses:
+        '200':
+          description: No response body
+  /invoice/:
+    get:
+      operationId: invoice_retrieve
+      tags:
+      - invoice
+      security:
+      - cookieAuth: []
+      - basicAuth: []
+      responses:
+        '200':
+          description: No response body
+    post:
+      operationId: invoice_create
+      tags:
+      - invoice
+      security:
+      - cookieAuth: []
+      - basicAuth: []
+      responses:
+        '200':
+          description: No response body
+  /invoice-generator/:
+    get:
+      operationId: invoice_generator_retrieve
+      tags:
+      - invoice-generator
+      security:
+      - cookieAuth: []
+      - basicAuth: []
+      responses:
+        '200':
+          description: No response body
+    post:
+      operationId: invoice_generator_create
+      tags:
+      - invoice-generator
+      security:
+      - cookieAuth: []
+      - basicAuth: []
+      responses:
+        '200':
+          description: No response body
+  /leave-requests/:
+    get:
+      operationId: leave_requests_retrieve
+      tags:
+      - leave-requests
+      security:
+      - cookieAuth: []
+      - basicAuth: []
+      responses:
+        '200':
+          description: No response body
+    post:
+      operationId: leave_requests_create
+      tags:
+      - leave-requests
+      security:
+      - cookieAuth: []
+      - basicAuth: []
+      responses:
+        '200':
+          description: No response body
+  /listing-business-online-why-is-it-important-for-your-salon/:
+    get:
+      operationId: listing_business_online_why_is_it_important_for_your_salon_retrieve
+      tags:
+      - listing-business-online-why-is-it-important-for-your-salon
+      security:
+      - cookieAuth: []
+      - basicAuth: []
+      - {}
+      responses:
+        '200':
+          description: No response body
+    post:
+      operationId: listing_business_online_why_is_it_important_for_your_salon_create
+      tags:
+      - listing-business-online-why-is-it-important-for-your-salon
+      security:
+      - cookieAuth: []
+      - basicAuth: []
+      - {}
+      responses:
+        '200':
+          description: No response body
+  /membership/:
+    get:
+      operationId: membership_retrieve
+      tags:
+      - membership
+      security:
+      - cookieAuth: []
+      - basicAuth: []
+      responses:
+        '200':
+          description: No response body
+    post:
+      operationId: membership_create
+      tags:
+      - membership
+      security:
+      - cookieAuth: []
+      - basicAuth: []
+      responses:
+        '200':
+          description: No response body
+  /my-branch/:
+    get:
+      operationId: my_branch_retrieve
+      tags:
+      - my-branch
+      security:
+      - cookieAuth: []
+      - basicAuth: []
+      responses:
+        '200':
+          description: No response body
+    post:
+      operationId: my_branch_create
+      tags:
+      - my-branch
+      security:
+      - cookieAuth: []
+      - basicAuth: []
+      responses:
+        '200':
+          description: No response body
+  /order-summary/{invoice_id}/:
+    get:
+      operationId: order_summary_retrieve
+      parameters:
+      - in: path
+        name: invoice_id
+        schema:
+          type: string
+        required: true
+      tags:
+      - order-summary
+      security:
+      - cookieAuth: []
+      - basicAuth: []
+      - {}
+      responses:
+        '200':
+          description: No response body
+    post:
+      operationId: order_summary_create
+      description: Handle POST requests to the OrderSummary view.
+      parameters:
+      - in: path
+        name: invoice_id
+        schema:
+          type: string
+        required: true
+      tags:
+      - order-summary
+      security:
+      - cookieAuth: []
+      - basicAuth: []
+      - {}
+      responses:
+        '200':
+          description: No response body
+  /privacy-policy/:
+    get:
+      operationId: privacy_policy_retrieve
+      tags:
+      - privacy-policy
+      security:
+      - cookieAuth: []
+      - basicAuth: []
+      - {}
+      responses:
+        '200':
+          description: No response body
+    post:
+      operationId: privacy_policy_create
+      tags:
+      - privacy-policy
+      security:
+      - cookieAuth: []
+      - basicAuth: []
+      - {}
+      responses:
+        '200':
+          description: No response body
+  /product-detail/{product_name}/{product_id}/:
+    get:
+      operationId: product_detail_retrieve
+      parameters:
+      - in: path
+        name: product_id
+        schema:
+          type: integer
+        required: true
+      - in: path
+        name: product_name
+        schema:
+          type: string
+        required: true
+      tags:
+      - product-detail
+      security:
+      - cookieAuth: []
+      - basicAuth: []
+      responses:
+        '200':
+          description: No response body
+    post:
+      operationId: product_detail_create
+      parameters:
+      - in: path
+        name: product_id
+        schema:
+          type: integer
+        required: true
+      - in: path
+        name: product_name
+        schema:
+          type: string
+        required: true
+      tags:
+      - product-detail
+      security:
+      - cookieAuth: []
+      - basicAuth: []
+      responses:
+        '200':
+          description: No response body
+  /products/:
+    get:
+      operationId: products_retrieve
+      tags:
+      - products
+      security:
+      - cookieAuth: []
+      - basicAuth: []
+      responses:
+        '200':
+          description: No response body
+    post:
+      operationId: products_create
+      tags:
+      - products
+      security:
+      - cookieAuth: []
+      - basicAuth: []
+      responses:
+        '200':
+          description: No response body
+  /refund-policy/:
+    get:
+      operationId: refund_policy_retrieve
+      tags:
+      - refund-policy
+      security:
+      - cookieAuth: []
+      - basicAuth: []
+      - {}
+      responses:
+        '200':
+          description: No response body
+    post:
+      operationId: refund_policy_create
+      tags:
+      - refund-policy
+      security:
+      - cookieAuth: []
+      - basicAuth: []
+      - {}
+      responses:
+        '200':
+          description: No response body
+  /reports/:
+    get:
+      operationId: reports_retrieve
+      tags:
+      - reports
+      security:
+      - cookieAuth: []
+      - basicAuth: []
+      responses:
+        '200':
+          description: No response body
+    post:
+      operationId: reports_create
+      tags:
+      - reports
+      security:
+      - cookieAuth: []
+      - basicAuth: []
+      responses:
+        '200':
+          description: No response body
+  /reviews/:
+    get:
+      operationId: reviews_retrieve
+      tags:
+      - reviews
+      security:
+      - cookieAuth: []
+      - basicAuth: []
+      responses:
+        '200':
+          description: No response body
+    post:
+      operationId: reviews_create
+      tags:
+      - reviews
+      security:
+      - cookieAuth: []
+      - basicAuth: []
+      responses:
+        '200':
+          description: No response body
+  /salary-slip/{first_name}/{last_name}/{username}/{month}/:
+    get:
+      operationId: salary_slip_retrieve
+      parameters:
+      - in: path
+        name: first_name
+        schema:
+          type: string
+        required: true
+      - in: path
+        name: last_name
+        schema:
+          type: string
+        required: true
+      - in: path
+        name: month
+        schema:
+          type: string
+        required: true
+      - in: path
+        name: username
+        schema:
+          type: string
+        required: true
+      tags:
+      - salary-slip
+      security:
+      - cookieAuth: []
+      - basicAuth: []
+      responses:
+        '200':
+          description: No response body
+  /sale-products/:
+    get:
+      operationId: sale_products_retrieve
+      tags:
+      - sale-products
+      security:
+      - cookieAuth: []
+      - basicAuth: []
+      responses:
+        '200':
+          description: No response body
+    post:
+      operationId: sale_products_create
+      tags:
+      - sale-products
+      security:
+      - cookieAuth: []
+      - basicAuth: []
+      responses:
+        '200':
+          description: No response body
+  /salon-list/:
+    get:
+      operationId: salon_list_retrieve
+      tags:
+      - salon-list
+      security:
+      - cookieAuth: []
+      - basicAuth: []
+      responses:
+        '200':
+          description: No response body
+    post:
+      operationId: salon_list_create
+      tags:
+      - salon-list
+      security:
+      - cookieAuth: []
+      - basicAuth: []
+      responses:
+        '200':
+          description: No response body
+  /satej-satyan/:
+    get:
+      operationId: satej_satyan_retrieve
+      tags:
+      - satej-satyan
+      security:
+      - cookieAuth: []
+      - basicAuth: []
+      - {}
+      responses:
+        '200':
+          description: No response body
+    post:
+      operationId: satej_satyan_create
+      tags:
+      - satej-satyan
+      security:
+      - cookieAuth: []
+      - basicAuth: []
+      - {}
+      responses:
+        '200':
+          description: No response body
+  /soham-sunthankar/:
+    get:
+      operationId: soham_sunthankar_retrieve
+      tags:
+      - soham-sunthankar
+      security:
+      - cookieAuth: []
+      - basicAuth: []
+      - {}
+      responses:
+        '200':
+          description: No response body
+  /staff-detail/:
+    get:
+      operationId: staff_detail_retrieve
+      tags:
+      - staff-detail
+      security:
+      - cookieAuth: []
+      - basicAuth: []
+      responses:
+        '200':
+          description: No response body
+    post:
+      operationId: staff_detail_create
+      tags:
+      - staff-detail
+      security:
+      - cookieAuth: []
+      - basicAuth: []
+      responses:
+        '200':
+          description: No response body
+  /support/:
+    get:
+      operationId: support_retrieve
+      tags:
+      - support
+      security:
+      - cookieAuth: []
+      - basicAuth: []
+      responses:
+        '200':
+          description: No response body
+    post:
+      operationId: support_create
+      tags:
+      - support
+      security:
+      - cookieAuth: []
+      - basicAuth: []
+      responses:
+        '200':
+          description: No response body
+  /terms-of-conditions/:
+    get:
+      operationId: terms_of_conditions_retrieve
+      tags:
+      - terms-of-conditions
+      security:
+      - cookieAuth: []
+      - basicAuth: []
+      - {}
+      responses:
+        '200':
+          description: No response body
+    post:
+      operationId: terms_of_conditions_create
+      tags:
+      - terms-of-conditions
+      security:
+      - cookieAuth: []
+      - basicAuth: []
+      - {}
+      responses:
+        '200':
+          description: No response body
+  /tutorial/:
+    get:
+      operationId: tutorial_retrieve
+      tags:
+      - tutorial
+      security:
+      - cookieAuth: []
+      - basicAuth: []
+      responses:
+        '200':
+          description: No response body
+    post:
+      operationId: tutorial_create
+      tags:
+      - tutorial
+      security:
+      - cookieAuth: []
+      - basicAuth: []
+      responses:
+        '200':
+          description: No response body
+  /why-should-you-focus-on-salon-inventory-management/:
+    get:
+      operationId: why_should_you_focus_on_salon_inventory_management_retrieve
+      tags:
+      - why-should-you-focus-on-salon-inventory-management
+      security:
+      - cookieAuth: []
+      - basicAuth: []
+      - {}
+      responses:
+        '200':
+          description: No response body
+    post:
+      operationId: why_should_you_focus_on_salon_inventory_management_create
+      tags:
+      - why-should-you-focus-on-salon-inventory-management
+      security:
+      - cookieAuth: []
+      - basicAuth: []
+      - {}
+      responses:
+        '200':
+          description: No response body
+components:
+  securitySchemes:
+    basicAuth:
+      type: http
+      scheme: basic
+    cookieAuth:
+      type: apiKey
+      in: cookie
+      name: sessionid

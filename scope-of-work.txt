@@ -1,0 +1,495 @@
+# ✂️ SnipKlip × Reecraft
+
+## Scope of Work (Version 2.0)
+
+---
+
+# Project Timeline
+
+| Module              | Status         |
+| ------------------- | -------------- |
+| Landing Website     | 🟡 In Progress |
+| Authentication      | 🟡 In Progress |
+| Salon Listing       | ⏳ Pending      |
+| Customer Portal     | ⏳ Pending      |
+| Vendor Portal       | ⏳ Pending      |
+| Booking & Payments  | ⏳ Pending      |
+| Admin Portal        | ⏳ Pending      |
+| Notifications       | ⏳ Pending      |
+| Analytics & Reports | ⏳ Pending      |
+
+---
+
+# 1. Landing Website
+
+### Pages
+
+* Home
+* About Us
+* Contact Us
+* Blogs
+* Pricing
+* FAQs
+* Privacy Policy
+* Terms & Conditions
+* Refund & Cancellation Policy
+
+### SEO
+
+* Meta Tags
+* Open Graph
+* Sitemap.xml
+* Robots.txt
+* Schema Markup
+* Google Analytics
+* Google Search Console
+
+---
+
+# 2. Authentication
+
+### Customer
+
+* Register
+* Login
+* Mobile OTP Verification
+* Email Verification
+* Forgot Password
+* Reset Password
+* Social Login (Google / Apple)
+
+### Vendor
+
+* Register Salon
+* Mobile Verification
+* Email Verification
+* KYC Verification
+* GST (Optional)
+
+---
+
+# 3. Salon Listing
+
+Every salon profile will contain
+
+### Business Information
+
+* Salon Name
+* Description
+* Category
+* Tagline
+* Logo
+* Cover Image
+* Gallery Images
+* Address
+* City
+* State
+* Pincode
+* Google Maps Location
+
+### Services
+
+* Categories
+* Services
+* Duration
+* Pricing
+* Discount Price
+* GST
+
+### Team
+
+* Barbers
+* Stylists
+* Beauticians
+* Experience
+* Languages
+* Availability
+* Profile Photo
+
+### Business
+
+* Working Hours
+* Holiday Calendar
+* Ratings
+* Reviews
+* Amenities
+
+Examples
+
+* AC
+* WiFi
+* Parking
+* Card Payment
+* UPI
+* Waiting Lounge
+
+### Digital Brochure
+
+Generate
+
+* QR Code
+* Shareable Link
+* Download PDF
+
+---
+
+# 4. Customer Portal
+
+## Dashboard
+
+* Upcoming Bookings
+* Past Bookings
+* Favorite Salons
+* Saved Addresses
+* Wallet Balance
+* Offers
+
+### Booking Flow
+
+### Step 1
+
+Choose
+
+* Location
+* Date
+* Time
+
+### Step 2
+
+Select
+
+* Salon
+* Barber
+* Services
+
+### Step 3
+
+Customer Details
+
+* Full Name
+* Email
+* Mobile Number
+* OTP Verification
+
+### Step 4
+
+Review
+
+* Booking Summary
+* Apply Coupon
+* Add Notes
+
+### Step 5
+
+Payment
+
+* UPI
+* Cards
+* Net Banking
+* Wallet
+* Cash at Salon
+
+Platform Fee
+
+* 1%
+* Free for first three bookings
+
+### Step 6
+
+Confirmation
+
+Send
+
+* Email
+* WhatsApp
+* SMS
+* Calendar Invite (.ics)
+
+### Step 7
+
+Booking Management
+
+* Cancel
+* Reschedule
+* Repeat Booking
+* Download Invoice
+
+### Customer Features
+
+* Wishlist
+* Order History
+* Profile
+* Reviews
+* Ratings
+* Referral Code
+* Loyalty Points
+* Coupons
+* Notifications
+
+---
+
+# 5. Vendor Portal
+
+## Dashboard
+
+* Today's Bookings
+* Revenue
+* Upcoming Appointments
+* Staff Status
+
+### Profile
+
+* Salon Details
+* Bank Details
+* GST Details
+* Business Hours
+
+### Services
+
+* Add
+* Update
+* Delete
+
+### Pricing
+
+* Dynamic Pricing
+* Peak Hour Pricing
+* Happy Hour Discounts
+* Festival Offers
+
+### Staff
+
+* Add Staff
+* Assign Services
+* Leave Management
+* Weekly Schedule
+
+### Booking
+
+* Accept
+* Reject
+* Reschedule
+* Mark Completed
+* No Show
+
+### Finance
+
+* Earnings
+* Settlements
+* Payout History
+* Transaction Reports
+
+### Marketing
+
+* Coupons
+* Promotional Campaigns
+* Referral Programs
+
+---
+
+# 6. Admin Portal
+
+## User Management
+
+* Customers
+* Vendors
+* Staff
+
+## Salon Management
+
+* Approve Listings
+* Reject Listings
+* Featured Salons
+
+## Booking Management
+
+* Monitor Bookings
+* Resolve Disputes
+
+## Payments
+
+* Vendor Settlements
+* Refunds
+* Commission Reports
+
+## Content
+
+* Blogs
+* FAQs
+* Offers
+* Notifications
+
+## Reports
+
+* Daily Revenue
+* Monthly Revenue
+* Top Salons
+* User Growth
+* Booking Analytics
+
+---
+
+# 7. Notifications
+
+### WhatsApp
+
+* Booking Confirmation
+* Booking Reminder
+* Cancellation
+* Payment Success
+
+### Email
+
+* Registration
+* Booking
+* Invoice
+* Offers
+* Password Reset
+
+### Push Notifications
+
+* Booking Reminder
+* New Offers
+* Review Reminder
+
+---
+
+# 8. Database
+
+## User
+
+* id
+* fullName
+* email
+* phoneNumber
+* gender
+* dateOfBirth
+* profilePhoto
+* password
+* role
+
+---
+
+## Salon
+
+* salonId
+* ownerId
+* salonName
+* description
+* address
+* latitude
+* longitude
+* rating
+* status
+
+---
+
+## Staff
+
+* staffId
+* salonId
+* name
+* role
+* experience
+* languages
+* availability
+
+---
+
+## Services
+
+* serviceId
+* salonId
+* category
+* serviceName
+* duration
+* price
+* discountedPrice
+
+---
+
+## Booking
+
+* bookingId
+* customerId
+* salonId
+* staffId
+* bookingDate
+* bookingTime
+* bookingStatus
+* paymentStatus
+* amount
+
+---
+
+## Payment
+
+* paymentId
+* bookingId
+* paymentMethod
+* transactionId
+* amount
+* GST
+* serviceCharge
+* paymentStatus
+
+---
+
+## Bank
+
+* accountNumber
+* IFSCCode
+* recipientName
+* accountType
+
+---
+
+# 9. Security
+
+* JWT Authentication
+* Refresh Tokens
+* Password Encryption
+* HTTPS
+* OTP Rate Limiting
+* API Rate Limiting
+* Audit Logs
+* Role-Based Access Control (RBAC)
+* Session Management
+* CSRF & XSS Protection
+
+---
+
+# 10. Integrations
+
+* Razorpay
+* Cashfree
+* WhatsApp Business API
+* Google Maps
+* Firebase Push Notifications
+* Google Analytics
+* Google Calendar
+* SMTP Email Service
+
+---
+
+# 11. Future Roadmap
+
+* AI Appointment Recommendations
+* AI Hairstyle Suggestions
+* AI Chat Support
+* Membership Plans
+* Subscription Packages
+* Gift Cards
+* Multi-Branch Support
+* Franchise Management
+* Inventory Purchase Orders
+* POS Billing
+* QR Payments
+* Customer Wallet
+* Vendor Mobile App
+* Customer Mobile App
+* Public APIs
+* Webhooks
+* Multi-language Support
+* Dark Mode
+* Offline Mode

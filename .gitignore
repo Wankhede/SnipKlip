@@ -1,0 +1,17 @@
+app/__pycache__/
+backend/__pycache__/
+backend/build/
+backend/migrations/
+*.pyc
+__pycache__/
+staticfiles/
+app/wsgi.py
+manage.py
+db.sqlite3
+app/db.sqlite3
+app/media
+app/media/
+.env
+django.log
+app/settings/local.py
+calendar-python-quickstart.json

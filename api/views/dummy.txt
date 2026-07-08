@@ -1,0 +1,125 @@
+{
+    "customer_id": 6,
+    "booking_platform": "BOOK APPOINTMENT",
+    "date":"2023-07-20T12:34:56.789Z",
+    "start_time": "2023-08-20T14:30:00.000Z",
+    "end_time": "2023-08-20T15:00:00.000Z",
+    "is_paid": false,
+    "salon_id": 1,
+    "branch_id": 1,
+    "user_id": 1,
+    "services": [{"attribute_id": 1}, {"attribute_id": 2}],
+    "staff_assigned": [{"attribute_id": 3}]
+}
+
+
+{
+  "title": "New event",
+  "description": "Something new",
+  "color": "#ff4d4f",
+  "textColor": "#fff",
+  "allDay": false,
+  "start": "2023-07-25T09:12:10.998Z",
+  "end": "2023-07-25T09:25:10.998Z",
+  "user_id": 10,
+  "salon_id": 3,
+  "branch_id": 3
+}
+
+Title : Customer name
+Description: Employee name
+Start: date and start time
+End : date and end time
+Color: Booking status
+
+
+  {
+    "id": "5e8882f1f0c9216397e05a9b",
+    "allDay": False,
+    "color": "#8c8c8c",
+    "description": "SCRUM Planning",
+    "start": "2023-07-08T04:15:00Z",
+    "end": "2023-07-08T06:30:00Z",
+    "title": "Repeating Event"
+  }
+
+b= {
+    "start": "2023-07-08T04:15:00Z",
+    "end": "2023-07-08T06:30:00Z",
+}
+a= OrderedDict([  ('booking_date', '2023-06-09'),('start_time', '10:00:00'), ('end_time', '10:20:00')])
+
+a= OrderedDict([('id', 2), ('user', OrderedDict([('id', 6), ('first_name', 'Ultron'), ('last_name', ''), ('email', 'ultron@gmail.com'), ('mobile', '2222222222'), ('date_joined', '2023-06-08T20:43:28.106897+05:30'), ('is_active', True)])),   ('price', '500.00'), ('booking_status', 'Availed'), ('payment_status', 'True'), ('mode_of_payment', None), ('createdAt', '2023-06-08T00:00:00+05:30'), ('staff_assigned', [OrderedDict([('id', 3), ('user', OrderedDict([('id', 7), ('first_name', 'Black'), ('last_name', 'Widow'), ('email', 'black@gmail.com'), ('mobile', '3333333333'), ('date_joined', '2023-06-08T21:02:24.280353+05:30'), ('is_active', True)])), ('first_name', 'Black'), ('last_name', 'Widow'), ('customer_name', 'Black Widow'), ('email', 'black@gmail.com'), ('mobile', '3333333333'), ('employee_type', 'Staff'), ('status', True), ('created', '2023-06-08T21:02:24.284927+05:30'), ('product_incentive', 10), ('service_incentive', 5)]), OrderedDict([('id', 2), ('user', OrderedDict([('id', 5), ('first_name', 'Steve'), ('last_name', 'Jobs'), ('email', 'steve@gmail.com'), ('mobile', '1111111111'), ('date_joined', '2023-06-08T20:41:46.433999+05:30'), ('is_active', True)])), ('first_name', 'Steve'), ('last_name', 'Jobs'), ('customer_name', 'Steve Jobs'), ('email', 'steve@gmail.com'), ('mobile', '1111111111'), ('employee_type', 'Staff'), ('status', True), ('created', '2023-06-08T20:41:46.437275+05:30'), ('product_incentive', 5), ('service_incentive', 10)])]), 
+a= OrderedDict([('id', 2),('service', [OrderedDict([('id', 1), ('user', 1), ('name', 'Bikini Line - Sugar Wax'), ('price', '500.00')])])])
+
+', '.join([service['name'] for member in service_data])
+
+
+export function getEvents() {
+  return async () => {
+    dispatch(calendar.actions.loading());
+    try {
+      const response = await axios.get('/api/v3/calendar/events/');
+      console.log(response.data.rows);
+      // Convert JSON data response to EventInput
+      // && Array.isArray(response.data.rows)
+      if (response.data && response.data.rows ) {
+        const eventsR: EventInput[] = response.data.rows.map((event:any) => ({
+          id: event.id,
+          allDay: event.allDay,
+          color: event.color,
+          description: event.description,
+          start: new Date(event.start),
+          end: new Date(event.end),
+          title: event.title
+        }));
+      dispatch(calendar.actions.setEvents(eventsR));
+      }else {
+        // Handle the case when response.data.rows is not an array or is undefined
+        throw new Error("Invalid response data format or missing 'rows' property");
+      }
+    } catch (error) {
+      console.log(error);
+      dispatch(calendar.actions.hasError(error));
+    }
+  };
+}
+
+
+"Important 
+Upcoming practice coding tests (PCTs) will be conducted on HackerRank Platform. All the students are required to sign-up using IITB LDAP id on HackerRank and fill the below form latest by 26th July | 11:59 PM.
+
+https://docs.google.com/forms/d/1twCEn1K0oML7c4EUxpb5UGBUIusgm31_xOY2U0bJvmM/edit
+
+Note: This account information will be used to allot incentive points throughout the placement season. Hence, don't change your username and use the same account for logging in all the upcoming tests."
+
+
+{
+    "data": {
+        "count": 1,
+        "rows": [
+                {
+                    "id": 1,
+                    "name": "watch movie”
+                    "status": true // what should be the value?
+                }
+            ]
+    },
+    "message": "Successfully retrieved all todos",
+    "status": 200
+}
+
+Create TODO table with fields
+- Name
+- Created On
+- Updated On
+- Status
+
+Create a serializer
+Create a url
+Create an api with the response
+Test it on DRF
+
+TODO:
+- What are the values for status
+- Check UI

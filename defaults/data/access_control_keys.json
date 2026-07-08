@@ -1,0 +1,130 @@
+[
+  {
+    "access_key": "WEB_HEADER_MEMBERSHIP",
+    "tag": "WEB_HEADER",
+    "section_name": "Header Menu",
+    "description": "Membership Page",
+    "subscription": ["PREMIUM"],
+    "group": ["Admin", "Manager", "Salon", "DemoGroup"]
+  },
+  {
+    "access_key": "WEB_HEADER_COUPON",
+    "tag": "WEB_HEADER",
+    "section_name": "Header Menu",
+    "description": "Coupon Page",
+    "subscription": ["PREMIUM"],
+    "group": ["Admin", "Manager", "Salon", "DemoGroup"]
+  },
+  {
+    "access_key": "WEB_HEADER_KANABN",
+    "tag": "WEB_HEADER",
+    "section_name": "Header Menu",
+    "description": "Kanban Page",
+    "subscription": ["PREMIUM", "STANDARD PLUS"],
+    "group": ["Admin"]
+  },
+  {
+    "access_key": "WEB_HEADER_INVENTORY",
+    "tag": "WEB_HEADER",
+    "section_name": "Header Menu",
+    "description": "Inventory Page",
+    "subscription": ["PREMIUM", "STANDARD PLUS"],
+    "group": ["Admin", "Manager", "Salon", "DemoGroup"]
+  },
+  {
+    "access_key": "WEB_HEADER_EXPENSE",
+    "tag": "WEB_HEADER",
+    "section_name": "Header Menu",
+    "description": "Expense Page",
+    "subscription": ["PREMIUM", "STANDARD PLUS"],
+    "group": ["Admin", "Manager", "Salon", "DemoGroup"]
+  },
+  {
+    "access_key": "WEB_HEADER_DASHBOARD",
+    "tag": "WEB_HEADER",
+    "section_name": "Header Menu",
+    "description": "Dashboard Page",
+    "subscription": ["PREMIUM", "STANDARD", "STANDARD PLUS"],
+    "group": ["Admin", "Manager", "Salon", "Staff", "DemoGroup"]
+  },
+  {
+    "access_key": "WEB_HEADER_EMPLOYEE",
+    "tag": "WEB_HEADER",
+    "section_name": "Header Menu",
+    "description": "Employee Page",
+    "subscription": ["PREMIUM", "STANDARD", "STANDARD PLUS"],
+    "group": ["Admin", "Manager", "Salon", "DemoGroup"]
+  },
+  {
+    "access_key": "WEB_HEADER_REPORT",
+    "tag": "WEB_HEADER",
+    "section_name": "Header Menu",
+    "description": "Report Page",
+    "subscription": ["PREMIUM", "STANDARD PLUS"],
+    "group": ["Admin", "Manager", "Salon", "Staff", "DemoGroup"]
+  },
+  {
+    "access_key": "WEB_HEADER_BILLING",
+    "tag": "WEB_HEADER",
+    "section_name": "Header Menu",
+    "description": "Invoice Page",
+    "subscription": ["PREMIUM", "STANDARD", "STANDARD PLUS"],
+    "group": ["Admin", "Manager", "Salon", "DemoGroup"]
+  },
+  {
+    "access_key": "WEB_HEADER_CUSTOMER",
+    "tag": "WEB_HEADER",
+    "section_name": "Header Menu",
+    "description": "Customer Page",
+    "subscription": ["PREMIUM", "STANDARD", "STANDARD PLUS"],
+    "group": ["Admin", "Manager", "Salon", "DemoGroup"]
+  },
+  {
+    "access_key": "WEB_HEADER_BOOKING",
+    "tag": "WEB_HEADER",
+    "section_name": "Header Menu",
+    "description": "Booking Page",
+    "subscription": ["PREMIUM", "STANDARD", "STANDARD PLUS"],
+    "group": ["Admin", "Manager", "Salon", "Staff", "DemoGroup"]
+  },
+  {
+    "access_key": "WEB_HEADER_LISTING",
+    "tag": "WEB_HEADER",
+    "section_name": "Header Menu",
+    "description": "Listing Page",
+    "subscription": ["PREMIUM", "STANDARD", "STANDARD PLUS"],
+    "group": ["Admin", "Manager", "Salon", "Staff", "DemoGroup"]
+  },
+  {
+    "access_key": "WEB_HEADER_LISTING_PERSONAL",
+    "tag": "WEB_HEADER",
+    "section_name": "Header Menu",
+    "description": "Listing Page",
+    "subscription": ["PREMIUM", "STANDARD", "STANDARD PLUS"],
+    "group": ["Admin", "Manager", "Salon", "Staff", "DemoGroup"]
+  },
+  {
+    "access_key": "WEB_HEADER_LISTING_SALON",
+    "tag": "WEB_HEADER",
+    "section_name": "Header Menu",
+    "description": "Listing Page",
+    "subscription": ["PREMIUM", "STANDARD", "STANDARD PLUS"],
+    "group": ["Admin", "Manager", "Salon", "DemoGroup"]
+  },
+  {
+    "access_key": "WEB_HEADER_ADMIN_DASHBOARD",
+    "tag": "WEB_HEADER",
+    "section_name": "Header Menu",
+    "description": "Admin Page",
+    "subscription": ["PREMIUM", "STANDARD", "STANDARD PLUS"],
+    "group": ["Admin"]
+  },
+  {
+    "access_key": "WEB_HEADER_REVIEW",
+    "tag": "WEB_HEADER",
+    "section_name": "Header Menu",
+    "description": "Review Page",
+    "subscription": ["PREMIUM"],
+    "group": ["Admin", "Manager", "Salon", "DemoGroup"]
+  }
+]

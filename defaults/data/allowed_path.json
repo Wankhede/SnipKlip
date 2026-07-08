@@ -1,0 +1,20 @@
+[
+    "/api/v3/login/",
+    "/api/v3/contact-us/",
+    "/api/v3/paymentCallback/",
+    "/api/v3/createPayment/",
+    "/api/v3/add-all-access-control-essentials/",
+    "/api/v3/user-details/",
+    "/api/v3/access-control-association/",
+    "/api/v3/send-email/",
+    "/api/v3/add-salon/",
+    "/api/v3/send-review-notification-to-customer/",
+    "/api/v3/check-coupon-code/",
+    "/api/v3/add-branch/",
+    "/api/v3/get-subscription-type/",
+    "/api/v3/download-template-file/",
+    "/api/v3/upload-file/",
+    "/api/v3/add-review/",
+    "/api/v3/get-user/",
+    "/api/v3/user-details-by-email/"
+]
