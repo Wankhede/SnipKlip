@@ -7,7 +7,7 @@ from rest_framework.response import Response
 from api.throttles import AssistantRateThrottle
 
 from .llm import generate_answer
-from .retrieval import retrieve
+from .retrieval import retrieve_with_meta
 from .safety import REFUSAL_MESSAGE, inspect_question, sanitize_answer
 
 
@@ -31,6 +31,7 @@ def ask_assistant(request):
                 "answer": REFUSAL_MESSAGE,
                 "refused": True,
                 "redacted": False,
+                "unsupported": False,
                 "provider": "safety",
                 "sources": [],
             },
@@ -38,17 +39,22 @@ def ask_assistant(request):
             "status": status.HTTP_200_OK,
         })
 
-    chunks = retrieve(safety.question)
-    answer = generate_answer(safety.question, chunks)
+    retrieval = retrieve_with_meta(safety.question)
+    answer = generate_answer(
+        safety.question,
+        retrieval.chunks,
+        unsupported=retrieval.unsupported,
+    )
     return Response({
         "data": {
             "answer": sanitize_answer(answer.text),
             "refused": False,
             "redacted": safety.redacted,
+            "unsupported": answer.unsupported,
             "provider": answer.provider,
             "sources": [
                 {"title": chunk.title, "route": chunk.route}
-                for chunk in chunks
+                for chunk in retrieval.chunks
             ],
         },
         "message": "Answer generated.",
