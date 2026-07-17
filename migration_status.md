@@ -8,7 +8,7 @@
 |-------|-------------|--------|
 | 0 | Setup for Token Efficiency (.cursorignore, this file) | [Complete] |
 | 1 | Local Environment & Database | [Complete] |
-| 2 | Branding & Domain Isolation | [Pending] |
+| 2 | Branding & Domain Isolation | [Complete] |
 | 3 | Secrets & Environment | [Pending] |
 | 4 | Package/Module Renaming | [Pending] |
 | 5 | UI/UX Polish | [Pending] |
@@ -21,7 +21,7 @@
 |-----|---------|-------|
 | checkpoint/phase-0 | 2026-07-17 | Initial migration tracker |
 | checkpoint/phase-1-start | 2026-07-17 | Before local env changes |
-| checkpoint/phase-1 | 2026-07-17 | Local env verified |
+| checkpoint/phase-2 | 2026-07-17 | Central branding config |
 
 ## Errors Log
 

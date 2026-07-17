@@ -5,6 +5,7 @@ from pathlib import Path
 from django.http import HttpRequest, HttpResponse
 
 from .env import get_env
+from app import snipklip_config as brand
 
 # Build paths inside the project like this: os.path.join(BASE_DIR, ...)
 BASE_DIR = Path(__file__).resolve().parents[2]
@@ -137,9 +138,9 @@ REST_FRAMEWORK = {
 }
 
 SPECTACULAR_SETTINGS = {
-    'TITLE': get_env('API_TITLE', 'SnipKlip REST API'),
-    'DESCRIPTION': get_env('API_DESCRIPTION', 'SnipKlip salon management platform API'),
-    'VERSION': get_env('API_VERSION', '3.0.0'),
+    'TITLE': brand.API_TITLE,
+    'DESCRIPTION': brand.API_DESCRIPTION,
+    'VERSION': brand.API_VERSION,
 }
 
 WEBPUSH_SETTINGS = {
@@ -197,12 +198,19 @@ RAZORPAY_KEY_ID = get_env('RAZORPAY_KEY_ID', '')
 RAZORPAY_KEY_SECRET = get_env('RAZORPAY_KEY_SECRET', '')
 
 HUBSPOT_KEY = get_env('HUBSPOT_KEY', '')
-DEFAULT_EMAIL = get_env('DEFAULT_EMAIL', 'snipklip777@gmail.com')
-DEFAULT_MOBILE_NUMBER = get_env('DEFAULT_MOBILE_NUMBER', '')
-DEFAULT_FROM_EMAIL = get_env('DEFAULT_FROM_EMAIL', 'snipklip777@gmail.com')
-DEFAULT_FROM_NAME = get_env('DEFAULT_FROM_NAME', 'SnipKlip')
-COMPANY_NAME = get_env('COMPANY_NAME', 'SnipKlip')
-CONTACT_RECIPIENTS = [email.strip() for email in get_env('CONTACT_RECIPIENTS', 'spwankhede007@gmail.com').split(',') if email.strip()]
+DEFAULT_EMAIL = brand.DEFAULT_EMAIL
+DEFAULT_MOBILE_NUMBER = get_env('DEFAULT_MOBILE_NUMBER', brand.CONTACT_NUMBER)
+DEFAULT_FROM_EMAIL = brand.DEFAULT_FROM_EMAIL
+DEFAULT_FROM_NAME = brand.DEFAULT_FROM_NAME
+COMPANY_NAME = brand.COMPANY_NAME
+COMPANY_WEBSITE = brand.COMPANY_WEBSITE
+SUPPORT_EMAIL = brand.SUPPORT_EMAIL
+ADMIN_EMAIL = brand.ADMIN_EMAIL
+CONTACT_NUMBER = brand.CONTACT_NUMBER
+CONTACT_RECIPIENTS = brand.CONTACT_RECIPIENTS
+SOCIAL_LINKS = brand.SOCIAL_LINKS
+LOGO = brand.LOGO
+BROCHURE_LINK = brand.BROCHURE_LINK
 FRONTEND_LINK = get_env('FRONTEND_LINK', 'http://localhost:8081')
 
 LOGGING = {
