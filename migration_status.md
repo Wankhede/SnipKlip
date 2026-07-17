@@ -155,6 +155,7 @@ Or: `./scripts/run_local.sh`
 
 - [Complete] Authenticated endpoint: `POST /api/v3/assistant/ask/`.
 - [Complete] OpenAI-compatible provider configuration with local retrieval fallback.
+- Offline mode is the default (`ASSISTANT_OFFLINE_MODE=True`), so no question leaves the machine.
 - The corpus contains curated product guidance only and imports no customer, salon, staff, billing, or admin models.
 - Questions are checked for sensitive-data extraction, prompt injection, credentials, and PII before any optional LLM call.
 - No prompts, responses, or conversations are persisted.

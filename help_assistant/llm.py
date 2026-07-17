@@ -33,6 +33,9 @@ def _fallback_answer(chunks: Sequence[HelpChunk]) -> Answer:
 
 
 def generate_answer(question: str, chunks: Sequence[HelpChunk]) -> Answer:
+    if settings.ASSISTANT_OFFLINE_MODE:
+        return _fallback_answer(chunks)
+
     api_key = settings.LLM_API_KEY
     model = settings.LLM_MODEL
     if not api_key or not model:

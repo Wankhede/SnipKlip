@@ -52,6 +52,7 @@ class HelpAssistantTests(APITestCase):
         self.assertNotContains(response, "person@example.com")
 
     @override_settings(
+        ASSISTANT_OFFLINE_MODE=False,
         LLM_API_KEY="test-only-key",
         LLM_MODEL="test-model",
         LLM_API_BASE_URL="https://llm.invalid/v1",
