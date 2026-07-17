@@ -150,3 +150,10 @@ python manage.py runserver 127.0.0.1:8000 --settings=app.settings.local
 ```
 
 Or: `./scripts/run_local.sh`
+
+## AI Help Assistant
+
+- [In progress] Isolated help-only retrieval package added under `help_assistant/`.
+- The corpus contains curated product guidance only and imports no customer, salon, staff, billing, or admin models.
+- Questions are checked for sensitive-data extraction, prompt injection, credentials, and PII before any optional LLM call.
+- No prompts, responses, or conversations are persisted.
