@@ -159,4 +159,5 @@ Or: `./scripts/run_local.sh`
 - Questions are checked for sensitive-data extraction, prompt injection, credentials, and PII before any optional LLM call.
 - No prompts, responses, or conversations are persisted.
 - Verification: 6 focused tests pass, covering JWT enforcement, retrieval, refusal, redaction, and outbound LLM payload isolation.
+- Live verification: an authenticated HTTP request returned the local guide answer and its temporary test user was deleted.
 - Security note: replace the weak local Django signing key before any shared deployment; tests correctly emit a short-key warning.
