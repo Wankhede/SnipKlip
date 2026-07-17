@@ -8,10 +8,12 @@ from api.views import (
     review)
 from api.views.message_notification import invoice_notification,main,review_notification
 from defaults import populate_json_data
+from help_assistant.views import ask_assistant
 
 urlpatterns = [
     path('login/', login, name='login'),
     path('signup/', signup, name='signup'),
+    path('assistant/ask/', ask_assistant, name='ask_assistant'),
     path('change-password/', user_profile.change_password, name="Change Password"),
     path('send-email/', sendCode.send_code_email, name="send_code_email"),
 

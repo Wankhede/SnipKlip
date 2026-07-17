@@ -153,7 +153,10 @@ Or: `./scripts/run_local.sh`
 
 ## AI Help Assistant
 
-- [In progress] Isolated help-only retrieval package added under `help_assistant/`.
+- [Complete] Authenticated endpoint: `POST /api/v3/assistant/ask/`.
+- [Complete] OpenAI-compatible provider configuration with local retrieval fallback.
 - The corpus contains curated product guidance only and imports no customer, salon, staff, billing, or admin models.
 - Questions are checked for sensitive-data extraction, prompt injection, credentials, and PII before any optional LLM call.
 - No prompts, responses, or conversations are persisted.
+- Verification: 6 focused tests pass, covering JWT enforcement, retrieval, refusal, redaction, and outbound LLM payload isolation.
+- Security note: replace the weak local Django signing key before any shared deployment; tests correctly emit a short-key warning.

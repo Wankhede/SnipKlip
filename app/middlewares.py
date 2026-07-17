@@ -11,6 +11,7 @@ PUBLIC_API_PATHS = {
     '/api/v3/signup/',
     '/api/v3/add-salon/',
     '/api/v3/send-email/',
+    '/api/v3/assistant/ask/',
 }
 
 

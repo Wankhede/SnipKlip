@@ -135,6 +135,7 @@ REST_FRAMEWORK = {
     'DEFAULT_THROTTLE_RATES': {
         'burst': get_env('THROTTLE_BURST', '60/min'),
         'sustained': get_env('THROTTLE_SUSTAINED', '1000/day'),
+        'assistant': get_env('THROTTLE_ASSISTANT', '20/hour'),
     },
 }
 
@@ -204,6 +205,12 @@ CRON_JOB_TOKEN = get_env('CRON_JOB_TOKEN', '')
 WHATSAPP_PHONE_NUMBER_ID = get_env('WHATSAPP_PHONE_NUMBER_ID', '')
 FACEBOOK_ACCESS_TOKEN = get_env('FACEBOOK_ACCESS_TOKEN', '')
 FAST2SMS_API_KEY = get_env('FAST2SMS_API_KEY', '')
+LLM_API_BASE_URL = get_env('LLM_API_BASE_URL', 'https://api.openai.com/v1')
+LLM_API_KEY = get_env('LLM_API_KEY', '')
+LLM_MODEL = get_env('LLM_MODEL', '')
+LLM_TIMEOUT_SECONDS = get_env('LLM_TIMEOUT_SECONDS', 15, int)
+LLM_MAX_OUTPUT_TOKENS = get_env('LLM_MAX_OUTPUT_TOKENS', 350, int)
+ASSISTANT_MAX_QUESTION_LENGTH = get_env('ASSISTANT_MAX_QUESTION_LENGTH', 600, int)
 FERNET_KEY = get_env('FERNET_KEY', '')
 FERNET_KEY_FILE = get_env('FERNET_KEY_FILE', 'secret.key')
 DEFAULT_EMAIL = brand.DEFAULT_EMAIL

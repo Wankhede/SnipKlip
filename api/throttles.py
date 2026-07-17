@@ -5,3 +5,7 @@ class BurstRateThrottle(UserRateThrottle):
 
 class SustainedRateThrottle(UserRateThrottle):
     scope = 'sustained'
+
+
+class AssistantRateThrottle(UserRateThrottle):
+    scope = 'assistant'
