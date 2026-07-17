@@ -1,0 +1,43 @@
+# Virtual environments
+.venv/
+venv/
+env/
+
+# Node
+node_modules/
+
+# Databases
+db.sqlite3
+**/db.sqlite3
+*.sqlite3
+
+# Media / uploads
+media/
+**/media/
+uploads/
+**/uploads/
+
+# Static build output
+staticfiles/
+**/staticfiles/
+build/
+dist/
+*.egg-info/
+__pycache__/
+**/__pycache__/
+*.pyc
+
+# IDE / OS
+.idea/
+.DS_Store
+
+# Logs
+*.log
+django.log
+
+# Secrets (never index)
+.env
+credentials.json
+secret.key
+*.pem
+*.key
