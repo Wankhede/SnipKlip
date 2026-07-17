@@ -1,6 +1,5 @@
 from django.contrib import admin
 from django.urls import path, re_path
-import debug_toolbar
 from django.conf.urls.static import static
 from django.conf import settings
 from django.views.generic import TemplateView

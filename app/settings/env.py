@@ -18,7 +18,7 @@ env = environ.Env(
     EMAIL_PORT=(int, 587),
 )
 
-env_file = BASE_DIR / '.env'
+env_file = BASE_DIR / ".env"
 if env_file.exists():
     environ.Env.read_env(env_file)
 
@@ -37,7 +37,7 @@ def get_env(name, default=None, cast=None):
 
 
 def load_env_file(env_file_path=None):
-    path = Path(env_file_path) if env_file_path else BASE_DIR / '.env'
+    path = Path(env_file_path) if env_file_path else BASE_DIR / ".env"
     if path.exists():
         environ.Env.read_env(path)
         return True
