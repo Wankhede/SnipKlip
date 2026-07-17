@@ -84,6 +84,7 @@
 | 1 | migrate | `.env` unreadable in sandbox | Ran with full permissions | Fixed |
 | Integration | backend tests | Legacy tests import swapped `auth.User` and call removed `assertEquals` | One verification run; no unrelated test rewrite | Pre-existing, logged |
 | Integration | signup API | Access-control middleware rejected public signup before reaching the view | Added signup/login/send-email to explicit public API paths | Fixed |
+| Frontend auth | salon registration | Middleware blocked `/api/v3/add-salon/`; login assumed every salon already had a branch | Made registration public and branch lookup nullable during onboarding | Fixed |
 
 ## Files Modified / Added / Removed
 
