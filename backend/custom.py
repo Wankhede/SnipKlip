@@ -1,10 +1,11 @@
 from django import template
 from .models import *
+from backend.crypto_utils import load_fernet_key
 register = template.Library()
 from cryptography.fernet import Fernet
 
 def load_key():
-    return open("secret.key", "rb").read()
+    return load_fernet_key()
 
 
 # @register.filter

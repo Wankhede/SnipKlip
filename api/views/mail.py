@@ -1,6 +1,8 @@
 from datetime import datetime, timedelta, timezone
 from django.conf import settings
 from django.core.mail import send_mail
+from sendgrid import SendGridAPIClient
+from sendgrid.helpers.mail import Mail
 
 
 def send_joining_mail(email, company_name, name):
@@ -30,7 +32,7 @@ def send_mail(template_id, email, data):
     # import ipdb;ipdb.set_trace()
     EMAIL_SENDER = (settings.DEFAULT_FROM_EMAIL, settings.DEFAULT_FROM_NAME)  # account used for sending emails
     EMAIL_RECEIVERS = [(email, email)]
-    API_CLIENT = settings.EMAIL_HOST_PASSWORD
+    API_CLIENT = settings.SENDGRID_API_KEY
     TEMPLATE_ID = template_id
     try:
         message = Mail(

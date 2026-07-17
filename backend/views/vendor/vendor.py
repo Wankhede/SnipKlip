@@ -1836,8 +1836,10 @@ def encrypt_transaction(transaction):
 
 from cryptography.fernet import Fernet
 
+from backend.crypto_utils import load_fernet_key
+
 def load_key():
-    return open("secret.key", "rb").read()
+    return load_fernet_key()
 
 def get_bookings(request):
     WEEK_DATE = []

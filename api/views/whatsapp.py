@@ -1,7 +1,7 @@
 import json
-import os
 
 import requests
+from django.conf import settings
 
 
 def whatsApp(messageParams=None, phoneNo='+919999999999', templateId=1):
@@ -20,7 +20,7 @@ def whatsApp(messageParams=None, phoneNo='+919999999999', templateId=1):
         5 : 'payment_confirmation',
         6 : 'sample_purchase_feedback'
     }
-    url = "https://graph.facebook.com/v13.0/100715709627999/messages"
+    url = f"https://graph.facebook.com/v13.0/{settings.WHATSAPP_PHONE_NUMBER_ID}/messages"
 
     payload = json.dumps({
     "messaging_product": "whatsapp",
@@ -52,11 +52,9 @@ def whatsApp(messageParams=None, phoneNo='+919999999999', templateId=1):
     }
     })
 
-    FACEBOOK_ACCESS_TOKEN = os.getenv('FACEBOOK_ACCESS_TOKEN', '')
-
     headers = {
         'Content-Type': 'application/json',
-        'Authorization': f'Bearer {FACEBOOK_ACCESS_TOKEN}'
+        'Authorization': f'Bearer {settings.FACEBOOK_ACCESS_TOKEN}'
     }
 
     response = requests.request("POST", url, headers=headers, data=payload)

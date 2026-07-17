@@ -2,6 +2,12 @@ app/__pycache__/
 backend/__pycache__/
 backend/build/
 backend/migrations/
+credentials.json
+secret.key
+*.pem
+*.key
+*.crt
+calendar-python-quickstart.json
 *.pyc
 __pycache__/
 staticfiles/
@@ -10,6 +16,7 @@ manage.py
 db.sqlite3
 app/db.sqlite3
 app/media
+env/
 app/media/
 .env
 django.log

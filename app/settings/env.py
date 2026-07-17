@@ -1,40 +1,44 @@
 import os
 from pathlib import Path
 
+import environ
 
-def load_env_file(env_file=None):
-    env_path = Path(env_file) if env_file else Path(__file__).resolve().parents[2] / ".env"
-    if not env_path.exists():
-        return False
+BASE_DIR = Path(__file__).resolve().parents[2]
+env = environ.Env(
+    DEBUG=(bool, False),
+    CORS_ALLOW_ALL_ORIGINS=(bool, True),
+    EMAIL_USE_TLS=(bool, True),
+    EMAIL_USE_OAUTH2=(bool, True),
+    SECURE_SSL_REDIRECT=(bool, False),
+    SESSION_COOKIE_SECURE=(bool, False),
+    CSRF_COOKIE_SECURE=(bool, False),
+    SECURE_HSTS_SECONDS=(int, 0),
+    SERVER=(int, 0),
+    FTP=(bool, False),
+    EMAIL_PORT=(int, 587),
+)
 
-    for raw_line in env_path.read_text(encoding="utf-8").splitlines():
-        line = raw_line.strip()
-        if not line or line.startswith("#") or "=" not in line:
-            continue
-        key, value = line.split("=", 1)
-        os.environ.setdefault(key.strip(), value.strip().strip('"').strip("'"))
-    return True
+env_file = BASE_DIR / '.env'
+if env_file.exists():
+    environ.Env.read_env(env_file)
 
 
 def get_env(name, default=None, cast=None):
-    value = os.getenv(name, default)
-    if value is None:
-        return None
+    """Backward-compatible env accessor used across settings and config modules."""
     if cast is None:
-        return value
+        return env(name, default=default)
     if cast is bool:
-        if isinstance(value, bool):
-            return value
-        if str(value).strip().lower() in {"1", "true", "yes", "on"}:
-            return True
-        if str(value).strip().lower() in {"0", "false", "no", "off", ""}:
-            return False
-        return bool(value)
+        return env.bool(name, default=default if default is not None else False)
     if cast is int:
-        return int(value)
+        return env.int(name, default=default if default is not None else 0)
     if cast is float:
-        return float(value)
-    return cast(value)
+        return env.float(name, default=default if default is not None else 0.0)
+    return cast(env(name, default=default))
 
 
-load_env_file()
+def load_env_file(env_file_path=None):
+    path = Path(env_file_path) if env_file_path else BASE_DIR / '.env'
+    if path.exists():
+        environ.Env.read_env(path)
+        return True
+    return False

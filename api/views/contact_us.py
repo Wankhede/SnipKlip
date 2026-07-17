@@ -1,11 +1,9 @@
 from django.conf import settings
 from api.throttles import BurstRateThrottle, SustainedRateThrottle
-from rest_framework.throttling import UserRateThrottle
 from rest_framework.decorators import api_view, throttle_classes
 from rest_framework.response import Response
 from sendgrid import SendGridAPIClient
 from sendgrid.helpers.mail import Mail
-from app.settings.production import EMAIL_HOST_PASSWORD
 from api.constants import *
 
 @api_view(['POST'])
@@ -30,7 +28,7 @@ def contactus(request):
                 subject=subject,
                 plain_text_content=message
             )
-            sg = SendGridAPIClient(api_key=EMAIL_HOST_PASSWORD)
+            sg = SendGridAPIClient(api_key=settings.SENDGRID_API_KEY)
             response = sg.send(message)
 
             return Response({

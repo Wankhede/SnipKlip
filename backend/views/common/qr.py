@@ -1,12 +1,13 @@
 from cryptography.fernet import Fernet
 import qrcode
 from PIL import Image
+from backend.crypto_utils import load_fernet_key
 
 def load_key():
-    return open("secret.key", "rb").read()
+    return load_fernet_key()
 
 def generateQRCode():
-    key = b'ZmDfcTF7_60GrrY167zsiPd67pEvs0aGOv2oasOM1Pg='
+    key = load_key()
     
     # value of key is assigned to a variable
     f = Fernet(key)

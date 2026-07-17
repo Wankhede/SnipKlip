@@ -55,7 +55,7 @@ def EmployeeBookingMail(request):
                 subject=subject,
                 plain_text_content=message_employee
             )
-            sg = SendGridAPIClient(api_key=settings.EMAIL_HOST_PASSWORD)
+            sg = SendGridAPIClient(api_key=settings.SENDGRID_API_KEY)
             response = sg.send(message)
 
             messages.error(request,'message Sent Successfully')
@@ -68,7 +68,7 @@ def EmployeeBookingMail(request):
 def dailyEmail(request):
     try:
         if 'token' in request.GET:
-            if request.GET['token'] == 'dx6QJHqEDSGfG7XqKHdp':
+            if request.GET['token'] == settings.CRON_JOB_TOKEN:
                 if request.GET['type'] == 'booking':
                     current_time = utc_to_local(datetime.today())
                     date = str(current_time.day) + '/' + str(current_time.month)

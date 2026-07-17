@@ -367,8 +367,10 @@ def getAllBillings(request, column_name=None, column_value=None):
                     "status": FAILED_STATUS_CODE,
                 })
 
+from backend.crypto_utils import load_fernet_key
+
 def load_key():
-    return open("secret.key", "rb").read()
+    return load_fernet_key()
 
 @api_view(['POST'])
 @jwt_authentication_required
