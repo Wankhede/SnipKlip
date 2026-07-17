@@ -137,7 +137,9 @@ REST_FRAMEWORK = {
 }
 
 SPECTACULAR_SETTINGS = {
-    'TITLE': 'Django REST API',
+    'TITLE': get_env('API_TITLE', 'SnipKlip REST API'),
+    'DESCRIPTION': get_env('API_DESCRIPTION', 'SnipKlip salon management platform API'),
+    'VERSION': get_env('API_VERSION', '3.0.0'),
 }
 
 WEBPUSH_SETTINGS = {
