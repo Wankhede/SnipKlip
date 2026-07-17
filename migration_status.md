@@ -85,6 +85,7 @@
 | Integration | backend tests | Legacy tests import swapped `auth.User` and call removed `assertEquals` | One verification run; no unrelated test rewrite | Pre-existing, logged |
 | Integration | signup API | Access-control middleware rejected public signup before reaching the view | Added signup/login/send-email to explicit public API paths | Fixed |
 | Frontend auth | salon registration | Middleware blocked `/api/v3/add-salon/`; login assumed every salon already had a branch | Made registration public and branch lookup nullable during onboarding | Fixed |
+| Frontend auth | user details | `/api/v3/user-details/` also dereferenced a missing first branch | Made pre-onboarding branch ID nullable | Fixed |
 
 ## Files Modified / Added / Removed
 

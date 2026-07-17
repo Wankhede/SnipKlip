@@ -124,7 +124,8 @@ def get_user_detail(request):
                             salon_id = employee.branch.salon.id
                         elif user_group == "Salon":
                             salon = SalonDetails.objects.get(user=user)
-                            selected_branch_id = Branch.objects.filter(salon=salon).first().id
+                            first_branch = Branch.objects.filter(salon=salon).first()
+                            selected_branch_id = first_branch.id if first_branch else None
                             salon_id = salon.id
                         elif user_group == "DemoGroup":
                             salon = SalonDetails.objects.get(user=user)
