@@ -1,0 +1,160 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Sign up — SnipKlip</title>
+  <style>
+    :root {
+      --ink: #1a2332;
+      --muted: #5c6b7a;
+      --accent: #0d7377;
+      --accent-hover: #095c5f;
+      --bg: #f0f4f7;
+      --card: #ffffff;
+      --border: #d5dde5;
+      --error: #b42318;
+      --ok: #027a48;
+    }
+    * { box-sizing: border-box; }
+    body {
+      margin: 0;
+      min-height: 100vh;
+      font-family: "Segoe UI", system-ui, sans-serif;
+      color: var(--ink);
+      background:
+        radial-gradient(ellipse 80% 50% at 10% 0%, #d4ebe9 0%, transparent 55%),
+        radial-gradient(ellipse 60% 40% at 100% 100%, #e8eef5 0%, transparent 50%),
+        var(--bg);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 1.5rem;
+    }
+    .panel {
+      width: 100%;
+      max-width: 420px;
+      background: var(--card);
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      padding: 2rem 1.75rem;
+      box-shadow: 0 12px 40px rgba(26, 35, 50, 0.08);
+    }
+    h1 {
+      margin: 0 0 0.25rem;
+      font-size: 1.5rem;
+      letter-spacing: -0.02em;
+    }
+    .brand {
+      color: var(--accent);
+      font-weight: 700;
+      font-size: 0.85rem;
+      text-transform: uppercase;
+      letter-spacing: 0.08em;
+      margin-bottom: 0.5rem;
+    }
+    .sub {
+      color: var(--muted);
+      font-size: 0.95rem;
+      margin: 0 0 1.5rem;
+    }
+    label {
+      display: block;
+      font-size: 0.85rem;
+      font-weight: 600;
+      margin-bottom: 0.35rem;
+    }
+    input {
+      width: 100%;
+      padding: 0.65rem 0.75rem;
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      font-size: 1rem;
+      margin-bottom: 1rem;
+    }
+    input:focus {
+      outline: 2px solid var(--accent);
+      border-color: transparent;
+    }
+    .row {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 0.75rem;
+    }
+    button {
+      width: 100%;
+      margin-top: 0.25rem;
+      padding: 0.75rem;
+      border: none;
+      border-radius: 8px;
+      background: var(--accent);
+      color: #fff;
+      font-size: 1rem;
+      font-weight: 600;
+      cursor: pointer;
+    }
+    button:hover { background: var(--accent-hover); }
+    .messages { list-style: none; padding: 0; margin: 0 0 1rem; }
+    .messages li {
+      padding: 0.65rem 0.75rem;
+      border-radius: 8px;
+      font-size: 0.9rem;
+      margin-bottom: 0.5rem;
+    }
+    .messages .error { background: #fef3f2; color: var(--error); }
+    .messages .success { background: #ecfdf3; color: var(--ok); }
+    .footer {
+      margin-top: 1.25rem;
+      text-align: center;
+      font-size: 0.9rem;
+      color: var(--muted);
+    }
+    .footer a { color: var(--accent); font-weight: 600; }
+  </style>
+</head>
+<body>
+  <div class="panel">
+    <div class="brand">SnipKlip</div>
+    <h1>Create account</h1>
+    <p class="sub">Sign up for a salon owner account.</p>
+
+    {% if messages %}
+    <ul class="messages">
+      {% for message in messages %}
+      <li class="{{ message.tags }}">{{ message }}</li>
+      {% endfor %}
+    </ul>
+    {% endif %}
+
+    <form method="post" action="/signup/">
+      {% csrf_token %}
+      <div class="row">
+        <div>
+          <label for="first_name">First name</label>
+          <input id="first_name" name="first_name" value="{{ first_name|default:'' }}">
+        </div>
+        <div>
+          <label for="last_name">Last name</label>
+          <input id="last_name" name="last_name" value="{{ last_name|default:'' }}">
+        </div>
+      </div>
+      <label for="email">Email</label>
+      <input id="email" name="email" type="email" required value="{{ email|default:'' }}">
+      <label for="mobile">Mobile</label>
+      <input id="mobile" name="mobile" value="{{ mobile|default:'' }}">
+      <label for="company_name">Salon / company</label>
+      <input id="company_name" name="company_name" value="{{ company_name|default:'' }}">
+      <label for="password">Password</label>
+      <input id="password" name="password" type="password" required minlength="8">
+      <label for="password_confirm">Confirm password</label>
+      <input id="password_confirm" name="password_confirm" type="password" required minlength="8">
+      <button type="submit">Sign up</button>
+    </form>
+
+    <p class="footer">
+      Already have an account?
+      <a href="/account-management/login/">Admin login</a>
+    </p>
+  </div>
+</body>
+</html>

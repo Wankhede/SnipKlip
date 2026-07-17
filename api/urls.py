@@ -1,5 +1,5 @@
 from django.urls import path
-from .common import login, getServices, getStaff, getServicesCustom
+from .common import login, signup, getServices, getStaff, getServicesCustom
 from api.views import (
     booking, slot, upload, user_profile, salon_profile,
     billing, employee, expense, reports, customer,
@@ -11,6 +11,7 @@ from defaults import populate_json_data
 
 urlpatterns = [
     path('login/', login, name='login'),
+    path('signup/', signup, name='signup'),
     path('change-password/', user_profile.change_password, name="Change Password"),
     path('send-email/', sendCode.send_code_email, name="send_code_email"),
 

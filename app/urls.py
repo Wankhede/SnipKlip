@@ -7,8 +7,10 @@ from django.conf.urls import include
 from django.contrib.auth import views as auth_views
 from drf_spectacular.views import SpectacularAPIView, SpectacularSwaggerView
 from rest_framework_simplejwt.views import TokenObtainPairView, TokenRefreshView, TokenVerifyView
+from api.views.signup_page import signup_page
 
 urlpatterns = [
+    path('signup/', signup_page, name='signup_page'),
     path('api/v3/',include('api.urls')),
     path('api/token/', TokenObtainPairView.as_view(), name='token_obtain_pair'),
     path('api/token/refresh/', TokenRefreshView.as_view(), name='token_refresh'),

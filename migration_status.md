@@ -82,6 +82,8 @@
 | 1 | deps | django-allauth middleware mismatch | Pinned allauth==0.52.0 | Fixed |
 | 1 | deps | debug_toolbar missing | pip install | Fixed |
 | 1 | migrate | `.env` unreadable in sandbox | Ran with full permissions | Fixed |
+| Integration | backend tests | Legacy tests import swapped `auth.User` and call removed `assertEquals` | One verification run; no unrelated test rewrite | Pre-existing, logged |
+| Integration | signup API | Access-control middleware rejected public signup before reaching the view | Added signup/login/send-email to explicit public API paths | Fixed |
 
 ## Files Modified / Added / Removed
 
@@ -98,7 +100,8 @@
 - `backend/apps.py`, `backend/custom.py`, `backend/cron.py`
 - `backend/views/common/qr.py`, `backend/views/vendor/vendor.py`
 - `api/views/contact_us.py`, `api/views/mail.py`, `api/views/whatsapp.py`, `api/views/sms.py`, `api/views/billing.py`
-- `app/urls.py` (removed unused debug_toolbar import)
+- `app/urls.py`, `app/middlewares.py` (public signup and API paths)
+- `api/common.py`, `api/urls.py`, `api/views/signup_page.py` (signup API/page)
 - `.env.example`, `.gitignore`, `requirements.txt`
 
 ### Removed from git tracking

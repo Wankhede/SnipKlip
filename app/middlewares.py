@@ -6,12 +6,22 @@ from backend.models import (User, SalonDetails, Branch, Subscription,AllowedPath
 from api.constants import APIMessages
 import json
 
+PUBLIC_API_PATHS = {
+    '/api/v3/login/',
+    '/api/v3/signup/',
+    '/api/v3/send-email/',
+}
+
+
 class AccessControlMiddleware:
     def __init__(self, get_response):
         self.get_response = get_response
 
     def __call__(self, request):
         if request.path.startswith('/api/v3/'):
+            if request.path in PUBLIC_API_PATHS:
+                return self.get_response(request)
+
             try:
                 data = json.loads(request.body)
             except json.JSONDecodeError:

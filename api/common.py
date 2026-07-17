@@ -60,6 +60,73 @@ def get_user_details(user_id):
     return salon_id, selected_branch_id
 
 @api_view(['POST'])
+def signup(request):
+    """
+    Public signup for salon owners / staff accounts.
+    Expected body: email, password, first_name, last_name (optional: mobile, company_name)
+    """
+    email = (request.data.get('email') or '').strip().lower()
+    password = request.data.get('password') or ''
+    first_name = (request.data.get('first_name') or '').strip()
+    last_name = (request.data.get('last_name') or '').strip()
+    mobile = (request.data.get('mobile') or '').strip()
+    company_name = (request.data.get('company_name') or '').strip()
+    name = (request.data.get('name') or f'{first_name} {last_name}'.strip()).strip()
+
+    if not email or not password:
+        return Response({
+            'message': 'email and password are required',
+            'status': FAILED_STATUS_CODE,
+        }, status=status.HTTP_400_BAD_REQUEST)
+
+    if len(password) < 8:
+        return Response({
+            'message': 'password must be at least 8 characters',
+            'status': FAILED_STATUS_CODE,
+        }, status=status.HTTP_400_BAD_REQUEST)
+
+    if User.objects.filter(email__iexact=email).exists() or User.objects.filter(username__iexact=email).exists():
+        return Response({
+            'message': 'An account with this email already exists',
+            'status': FAILED_STATUS_CODE,
+        }, status=status.HTTP_400_BAD_REQUEST)
+
+    try:
+        user = User.objects.create_user(
+            username=email,
+            email=email,
+            password=password,
+            first_name=first_name,
+            last_name=last_name,
+            name=name or email,
+            mobile=mobile or None,
+            company_name=company_name or None,
+            user_status=1,
+        )
+        group, _ = Group.objects.get_or_create(name='Salon')
+        user.groups.add(group)
+
+        refresh = RefreshToken.for_user(user)
+        return Response({
+            'message': 'Signup successful',
+            'status': SUCCESS_STATUS_CODE,
+            'data': {
+                'access_token': str(refresh.access_token),
+                'user_id': user.id,
+                'email': user.email,
+                'name': user.get_name(),
+                'group': 'Salon',
+            },
+        }, status=status.HTTP_201_CREATED)
+    except Exception as e:
+        log_error_with_api_endpoint(request, e)
+        return Response({
+            'message': APIMessages.INTERNAL_SERVER_ERROR.value,
+            'status': FAILED_STATUS_CODE,
+        }, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+
+
+@api_view(['POST'])
 def login(request):
     access_token = request.data.get('access_token', None)
     id_token_value = request.data.get('id_token', None)
