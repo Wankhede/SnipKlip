@@ -1,4 +1,3 @@
-from api.common import get_user_details
 from rest_framework.decorators import api_view
 from rest_framework.response import Response
 from api.serializers import UserSerializer
@@ -76,80 +75,88 @@ def get_user_profile(request):
 @api_view(['GET', 'PUT'])
 def get_user_detail(request):
     if request.method == "GET":
-        data = request.GET
-        if data.get('user_id'):
-            user_id = int(data.get('user_id')) if data.get('user_id') is not None else None
-        if data.get('email'):
-            email = data.get('email', None) if data.get('email') is not None else None
-            user_id = User.objects.get(email=email).id
-        if user_id is not None:
-            salon_id, selected_branch_id = get_user_details(user_id)
-            if selected_branch_id == False:
-                selected_branch_id = None
-                subscription_name = "NULL"
-            try:
-                user = User.objects.get(id=user_id)
-            except Exception:
-                return Response({
-                    "message": APIMessages.USER_ID_NOT_FOUND.value,
-                    "status": UNAUTHORISED_CODE,
-                })
-            # Try to create an Admin group if it doesn't exist
-            try:
-                admin_group = Group.objects.get(name='Admin')
-            except Group.DoesNotExist:
-                admin_group = Group(name='Admin')
-                admin_group.save()
-
-            if user is not None:
-                if admin_group in user.groups.all():
-                    salon_id = -1
-                    selected_branch_id = -1
-                    user_group = "Admin"
-                    subscription_name = 'Premium'
-                else:
-                    user_group = user.groups.first().name
-                    salon_id, selected_branch_id = get_user_details(user.id)
-                    if selected_branch_id is None:
-                        subscription_name = "NULL"
-                    else:
-                        if user_group == "Manager":
-                            manager_of_branch = Branch.objects.get(manager=user)
-                            salon = manager_of_branch.salon
-                            selected_branch_id = manager_of_branch.id
-                            salon_id = salon.id
-                        elif user_group == "Staff":
-                            employee = Employee.objects.get(user=user,status="Active")
-                            selected_branch_id = employee.branch.id
-                            salon_id = employee.branch.salon.id
-                        elif user_group == "Salon":
-                            salon = SalonDetails.objects.get(user=user)
-                            first_branch = Branch.objects.filter(salon=salon).first()
-                            selected_branch_id = first_branch.id if first_branch else None
-                            salon_id = salon.id
-                        elif user_group == "DemoGroup":
-                            salon = SalonDetails.objects.get(user=user)
-                            selected_branch_id = Branch.objects.filter(salon=salon).first().id
-                            salon_id = salon.id
-                        else:
-                            pass
-                        current_datetime = timezone.now()
-                        if Subscription.objects.filter(salon=salon,paid=True,end_date__gt=current_datetime):
-                            subscription_name = Subscription.objects.get(salon=salon,paid=True,end_date__gt=current_datetime).name_of_subscription
-                        else:
-                            subscription_name = "NULL"
-            response = Response({
-                "data": {
-                    "user_id": user_id,
-                    "salon_id": salon_id,
-                    "branch_id": selected_branch_id,
-                    "group": user_group,
-                    "subscription_name": subscription_name,
-                },
-                'message': 'successful',
-                'status': 200
+        user_id = request.GET.get('user_id')
+        email = request.GET.get('email')
+        if not user_id and not email:
+            return Response({
+                "message": APIMessages.USER_ID_NOT_FOUND.value,
+                "status": BAD_REQUEST_STATUS,
             })
-            return response
+
+        try:
+            lookup = {'email': email} if email else {'id': int(user_id)}
+            user = User.objects.get(**lookup)
+        except (User.DoesNotExist, TypeError, ValueError):
+            return Response({
+                "message": APIMessages.USER_ID_NOT_FOUND.value,
+                "status": UNAUTHORISED_CODE,
+            })
+
+        group_names = list(user.groups.values_list('name', flat=True))
+        user_group = group_names[0] if group_names else ""
+        salon = None
+        salon_id = None
+        selected_branch_id = None
+        subscription_name = "NULL"
+
+        if user.is_superuser or "Admin" in group_names:
+            salon_id = -1
+            selected_branch_id = -1
+            user_group = "Admin"
+            subscription_name = "Premium"
+        elif user_group == "Manager":
+            branch = (
+                Branch.objects.select_related('salon')
+                .filter(manager=user)
+                .first()
+            )
+            if branch:
+                salon = branch.salon
+                salon_id = branch.salon_id
+                selected_branch_id = branch.id
+        elif user_group == "Staff":
+            employee = (
+                Employee.objects.select_related('branch__salon')
+                .filter(user=user, status="Active")
+                .first()
+            )
+            if employee and employee.branch:
+                salon = employee.branch.salon
+                salon_id = employee.branch.salon_id
+                selected_branch_id = employee.branch_id
+        elif user_group in ("Salon", "DemoGroup"):
+            salon = SalonDetails.objects.filter(user=user).first()
+            if salon:
+                salon_id = salon.id
+                selected_branch_id = (
+                    Branch.objects.filter(salon=salon)
+                    .values_list('id', flat=True)
+                    .first()
+                )
+
+        if salon:
+            subscription_name = (
+                Subscription.objects.filter(
+                    salon=salon,
+                    paid=True,
+                    end_date__gt=timezone.now(),
+                )
+                .values_list('name_of_subscription', flat=True)
+                .first()
+                or "NULL"
+            )
+
+        return Response({
+            "data": {
+                "user_id": user.id,
+                "salon_id": salon_id,
+                "branch_id": selected_branch_id,
+                "group": user_group,
+                "subscription_name": subscription_name,
+            },
+            'message': 'successful',
+            'status': 200
+        })
     elif request.method == "PUT":
         try:
             data = request.data

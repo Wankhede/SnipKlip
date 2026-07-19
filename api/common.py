@@ -42,22 +42,21 @@ def log_error_with_api_endpoint(request, error):
         logger.error(f"Error in logging API endpoint error: {str(e)}")
 
 def get_user_details(user_id):
-    # Retrieve user information
+    # Retrieve salon and first branch with a single pass.
     try:
-        user = User.objects.get(pk=user_id)
-    except User.DoesNotExist:
-        raise ValidationErr("User not found")
-    try:
-        # Retrieve salon details
-        salon_id = SalonDetails.objects.get(user=user).id
-        if Branch.objects.filter(salon__id=salon_id):
-            selected_branch_id = Branch.objects.filter(salon__id=salon_id).first().id
-        else:
-            selected_branch_id = None
-    except:
-        salon_id = selected_branch_id = None
-    # Return user, salon, and branch information
-    return salon_id, selected_branch_id
+        salon = SalonDetails.objects.filter(user_id=user_id).only('id').first()
+    except Exception:
+        return None, None
+
+    if not salon:
+        return None, None
+
+    selected_branch_id = (
+        Branch.objects.filter(salon_id=salon.id)
+        .values_list('id', flat=True)
+        .first()
+    )
+    return salon.id, selected_branch_id
 
 @api_view(['POST'])
 def signup(request):
