@@ -27,12 +27,15 @@ Updated: 2026-07-19
 ### Fixes
 
 - Backend: single-pass owner/manager/staff/salon context resolution with `select_related` / `values_list`.
+- Backend: login no longer crashes on multiple active subscriptions.
+- Backend: adding a second branch no longer creates another paid trial.
+- Backend: branch serializer safely returns null manager names.
 - Frontend: stable access-context key, one-shot onboarding redirect, session-key guarded user fetch, session-status AuthGuard.
 - Dashboard: primary “Booking Next” CTA → `/apps/bookings/add-bookings`.
 
 ### Verification
 
-- `python manage.py test api.test_user_details_performance` → PASS (queries reduced from 17 to ≤6)
+- `python manage.py test api.test_user_details_performance api.test_post_login_stability` → PASS
 - `node scripts/test_phase1.js` → PASS
 - Live:
   - `http://127.0.0.1:8082/api/schema/` → 200
@@ -40,6 +43,10 @@ Updated: 2026-07-19
   - `http://localhost:8083/dashboard/default` → 200
   - `http://localhost:8083/apps/bookings/add-bookings` → 200
   - `http://127.0.0.1:8082/account-management/login/` → 200
+
+### Follow-up from audits
+
+- [Trace backend branch queries](371ad649-20c5-43fc-813f-0bd606ba66a1) and [Trace frontend login loop](44977218-e218-4317-bdd0-37c27e19e671) confirmed the same bootstrap bottlenecks and added residual risks around duplicate trials and null managers; those residual risks are now covered by `api.test_post_login_stability`.
 
 ## Phase 2 — Stepped Shop Owner onboarding
 

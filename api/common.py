@@ -209,11 +209,20 @@ def login(request):
                     else:
                         pass
                     current_datetime = timezone.now()
-
-                    if Subscription.objects.filter(salon=salon,paid=True,end_date__gt=current_datetime):
-                        subscription_name = Subscription.objects.get(salon=salon,paid=True,end_date__gt=current_datetime).name_of_subscription
-                    else:
-                        subscription_name = "NULL"
+                    active_subscription = (
+                        Subscription.objects.filter(
+                            salon=salon,
+                            paid=True,
+                            end_date__gt=current_datetime,
+                        )
+                        .order_by('-end_date')
+                        .first()
+                    )
+                    subscription_name = (
+                        active_subscription.name_of_subscription
+                        if active_subscription
+                        else "NULL"
+                    )
             response = Response({
                 "data": {
                     'access_token': access_token,

@@ -7,6 +7,7 @@ from django.shortcuts import redirect, render
 from django.contrib import messages
 from django.contrib.auth import authenticate, login
 from django.contrib.auth.hashers import make_password
+from django.utils import timezone
 from api.views.mail import send_joining_mail
 from backend.models import *
 from django.contrib.auth.models import Group
@@ -75,27 +76,25 @@ def add_branch_api(request):
                 total_staff=staff_no,
                 salon_type=salon_type
             )
-            # Get the current date and time
-            current_datetime = datetime.today()
-
-            # Create a timedelta object for 7 days
-            delta = timedelta(days=7)
-
-            # Add the timedelta to the current date and time
-            seven_days_later = current_datetime + delta
-
-            subscription = Subscription(
-                    name_of_subscription = "PREMIUM",
-                    salon = salon,
+            # Only seed a trial when the salon has no active paid subscription.
+            current_datetime = timezone.now()
+            has_active_subscription = Subscription.objects.filter(
+                salon=salon,
+                paid=True,
+                end_date__gt=current_datetime,
+            ).exists()
+            if not has_active_subscription:
+                Subscription.objects.create(
+                    name_of_subscription="PREMIUM",
+                    salon=salon,
                     user=user,
-                    start_date = current_datetime,
-                    end_date = seven_days_later,
-                    credit_balance = 0,
-                    type = "MONTHLY",
-                    paid = True,
-                    order_id = f"DEMO_for_salon--->{salon.name}____{salon.id}"
+                    start_date=current_datetime,
+                    end_date=current_datetime + timedelta(days=7),
+                    credit_balance=0,
+                    type="MONTHLY",
+                    paid=True,
+                    order_id=f"DEMO_for_salon--->{salon.name}____{salon.id}",
                 )
-            subscription.save()
             return Response({
                 'data': {
                     'branch_id': branch.id,

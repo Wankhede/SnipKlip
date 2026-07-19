@@ -41,10 +41,9 @@ class BranchSerializer(serializers.ModelSerializer):
                   'total_staff', 'online_booking_appointment', 'salon_type', 'availability_status', 'address']
 
     def get_manager_name(self, obj):
-        try:
-            return f"{obj.manager.name}"
-        except:
-            return f"{obj.manager.username}"
+        if not obj.manager_id or not obj.manager:
+            return None
+        return obj.manager.name or obj.manager.username or None
 
 
 class SalarySerializer(serializers.ModelSerializer):
