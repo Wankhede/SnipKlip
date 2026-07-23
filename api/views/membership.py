@@ -13,30 +13,46 @@ import pytz
 def getAllMembership(request, column_name=None, column_value=None):
     if request.method == "GET":
         if column_value is None:
-            request_args = request.GET
-            branch_id = request_args['branch_id']
-            if branch_id == '-1':
-                all_membership = get_all_table_records(request, Membership)
-            else:
-                branch = Branch.objects.get(id=branch_id)
-                all_membership = Membership.objects.filter(branch=branch).order_by('-id')
+            try:
+                request_args = request.GET
+                branch_id = request_args.get('branch_id')
+                if branch_id in (None, ''):
+                    return Response({
+                        'message': 'branch_id is required',
+                        'status': BAD_REQUEST_STATUS,
+                    }, status=BAD_REQUEST_STATUS)
+                if branch_id == '-1':
+                    all_membership = get_all_table_records(request, Membership)
+                else:
+                    branch = Branch.objects.get(id=branch_id)
+                    all_membership = Membership.objects.filter(branch=branch).order_by('-id')
 
-            final_membership_list = apply_filters(Membership, all_membership, request_args)
-    
-            # Call the custom_pagination function to get the paginated items.
-            final_membership_list = custom_pagination(request, final_membership_list)            
+                final_membership_list = apply_filters(Membership, all_membership, request_args)
 
-            serializer = MembershipSerializer(final_membership_list, many=True)
+                # Call the custom_pagination function to get the paginated items.
+                final_membership_list = custom_pagination(request, final_membership_list)
 
-            # Return the serialized data in the response
-            return Response({
-                "data": {
-                    "count": len(final_membership_list),
-                    "rows": list(serializer.data)
-                },
-                "message": APIMessages.ALL_MEMBERSHIP_RETRIEVED.value,
-                "status": SUCCESS_STATUS_CODE,
-            })
+                serializer = MembershipSerializer(final_membership_list, many=True)
+
+                # Return the serialized data in the response
+                return Response({
+                    "data": {
+                        "count": len(final_membership_list),
+                        "rows": list(serializer.data)
+                    },
+                    "message": APIMessages.ALL_MEMBERSHIP_RETRIEVED.value,
+                    "status": SUCCESS_STATUS_CODE,
+                })
+            except (Branch.DoesNotExist, ValueError, TypeError):
+                return Response({
+                    'message': APIMessages.USER_OR_BRANCH_NOT_EXISTS.value,
+                    'status': BAD_REQUEST_STATUS,
+                }, status=BAD_REQUEST_STATUS)
+            except Exception as e:
+                return Response({
+                    'message': f'{APIMessages.INTERNAL_SERVER_ERROR.value}: {e}',
+                    'status': FAILED_STATUS_CODE,
+                }, status=BAD_REQUEST_STATUS)
         else:
             try:
                 # Check if column_name is a valid field in the Expense model
@@ -65,13 +81,20 @@ def getAllMembership(request, column_name=None, column_value=None):
                     "status": NOT_FOUND_STATUS,
                 })
     elif request.method == 'POST':
-        customer_id = request.data.get('customer_id')
-        customer_obj = Customer.objects.get(id=customer_id)
-        selected_branch_id = request.data.get('branch_id')
-        discount_percent = request.data.get('discount_percent')
-        expiry_date = request.data.get('expiry_date')
+        data = request.data
+        if not hasattr(data, 'get'):
+            return Response({
+                'message': 'Invalid JSON body; expected an object',
+                'status': BAD_REQUEST_STATUS,
+            }, status=BAD_REQUEST_STATUS)
+
+        customer_id = data.get('customer_id')
+        selected_branch_id = data.get('branch_id')
+        discount_percent = data.get('discount_percent')
+        expiry_date = data.get('expiry_date')
 
         try:
+            customer_obj = Customer.objects.get(id=customer_id)
             branch = Branch.objects.get(id=selected_branch_id)
             expiry_date_iso = str(datetime.strptime(expiry_date, '%Y-%m-%dT%H:%M:%S.%fZ'))
 
@@ -79,10 +102,10 @@ def getAllMembership(request, column_name=None, column_value=None):
             ist = pytz.timezone('Asia/Kolkata')
             expiry_date_utc = datetime.fromisoformat(expiry_date_iso).replace(tzinfo=ist)
             coupon = Membership(
-                customer = customer_obj,
-                branch = branch,
-                discount_percent = discount_percent,
-                expiry_date = expiry_date_utc
+                customer=customer_obj,
+                branch=branch,
+                discount_percent=discount_percent,
+                expiry_date=expiry_date_utc
             )
             coupon.save()
 
@@ -90,12 +113,17 @@ def getAllMembership(request, column_name=None, column_value=None):
                 "message": APIMessages.MEMBERSHIP_CREATED.value,
                 "status": SUCCESS_STATUS_CODE,
             })
-        
+
+        except (Customer.DoesNotExist, Branch.DoesNotExist, TypeError, ValueError, KeyError) as e:
+            return Response({
+                "message": f'Invalid membership payload: {e}',
+                "status": BAD_REQUEST_STATUS,
+            }, status=BAD_REQUEST_STATUS)
         except Exception:
             return Response({
                 "message": APIMessages.ERROR.value,
-                "status": FAILED_STATUS_CODE,
-            })
+                "status": BAD_REQUEST_STATUS,
+            }, status=BAD_REQUEST_STATUS)
     elif request.method == 'PUT':
         try:
             id = request.data.get('id', None)

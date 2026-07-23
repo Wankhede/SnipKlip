@@ -17,36 +17,72 @@ export type LoginSession = {
   raw: any;
 };
 
-export async function apiLogin(request: APIRequestContext): Promise<LoginSession> {
-  const response = await request.post(`${BACKEND_URL}/api/v3/login/`, {
-    data: { username: ADMIN_USER, password: ADMIN_PASSWORD }
-  });
-  const body = await response.json().catch(() => ({}));
-  expect(response.ok(), `login failed: ${response.status()} ${JSON.stringify(body)}`).toBeTruthy();
+/** Reuse one admin session across tests to avoid BurstRateThrottle 429s on /login/. */
+let cachedSession: LoginSession | null = null;
+let cachedAt = 0;
+const CACHE_MS = 10 * 60 * 1000;
 
-  const data = body?.data || body;
-  const accessToken = data?.access_token || body?.access_token;
+function sleep(ms: number) {
+  return new Promise((r) => setTimeout(r, ms));
+}
+
+export async function apiLogin(request: APIRequestContext): Promise<LoginSession> {
+  if (cachedSession && Date.now() - cachedAt < CACHE_MS) {
+    return cachedSession;
+  }
+
+  let lastBody: any = {};
+  let response: Awaited<ReturnType<APIRequestContext['post']>> | null = null;
+
+  for (let attempt = 0; attempt < 5; attempt++) {
+    response = await request.post(`${BACKEND_URL}/api/v3/login/`, {
+      data: { username: ADMIN_USER, password: ADMIN_PASSWORD }
+    });
+    lastBody = await response.json().catch(() => ({}));
+    if (response.status() === 429) {
+      const waitSec = Number(String(lastBody?.detail || '').match(/(\d+)/)?.[1] || 5);
+      await sleep((waitSec + 1) * 1000);
+      continue;
+    }
+    break;
+  }
+
+  expect(
+    response!.ok(),
+    `login failed: ${response!.status()} ${JSON.stringify(lastBody)}`
+  ).toBeTruthy();
+
+  const data = lastBody?.data || lastBody;
+  const accessToken = data?.access_token || lastBody?.access_token;
   expect(accessToken, 'access_token missing from login response').toBeTruthy();
 
   let salonId = data?.salon_id ?? DEFAULT_SALON_ID;
   let branchId = data?.branch_id ?? DEFAULT_BRANCH_ID;
   let group = data?.group || 'Admin';
   let subscriptionName = data?.subscription_name || 'Premium';
-  let userId = data?.user_id || data?.id || body?.id;
+  let userId = data?.user_id || data?.id || lastBody?.id;
 
   // Admin accounts often return -1 for salon/branch — resolve to a real tenant for CRUD lists
   if (Number(salonId) < 0) salonId = DEFAULT_SALON_ID;
   if (Number(branchId) < 0) branchId = DEFAULT_BRANCH_ID;
 
-  return {
+  cachedSession = {
     accessToken,
     userId,
     salonId,
     branchId,
     group,
     subscriptionName: subscriptionName == null ? 'Premium' : String(subscriptionName),
-    raw: body
+    raw: lastBody
   };
+  cachedAt = Date.now();
+  return cachedSession;
+}
+
+/** Force a fresh login (e.g. after DB wipe mid-suite). */
+export function clearLoginCache() {
+  cachedSession = null;
+  cachedAt = 0;
 }
 
 export function authHeaders(session: LoginSession) {

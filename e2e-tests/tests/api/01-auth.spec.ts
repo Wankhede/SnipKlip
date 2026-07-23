@@ -44,7 +44,7 @@ test.describe('Auth & Authorization', () => {
     const session = await apiLogin(request);
     const response = await request.get(`${BACKEND_URL}/api/v3/user-details/`, {
       headers: authHeaders(session),
-      params: { email: 'admin@snipklip.in', user_id: String(session.userId) }
+      params: { user_id: String(session.userId) }
     });
     await expectNotServerError(response, 'user-details');
     const body = await getJson(response);

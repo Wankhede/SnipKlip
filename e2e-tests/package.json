@@ -13,6 +13,10 @@
     "test:browser": "playwright test tests/ui --project=chromium",
     "test:journeys": "playwright test tests/ui/user-journeys.spec.ts --project=chromium",
     "test:contract": "playwright test tests/api/api-contract.spec.ts --project=api",
+    "test:monkey": "playwright test tests/api/05-monkey.spec.ts tests/ui/monkey.spec.ts",
+    "test:bva": "playwright test tests/api/06-bva.spec.ts --project=api",
+    "test:chaos": "playwright test tests/api/05-monkey.spec.ts tests/api/06-bva.spec.ts tests/ui/monkey.spec.ts",
+    "db:wipe": "node scripts/wipe-db.js",
     "report": "playwright show-report reports/html"
   },
   "devDependencies": {

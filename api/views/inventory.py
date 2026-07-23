@@ -98,16 +98,23 @@ def getAllProducts(request, column_name=None, column_value=None):
             })
 
     elif request.method == "POST":
-        product_name = request.data.get('name','')
-        product_price = request.data.get('price','')
-        product_descrition = request.data.get('description','')
-        product_availablity = request.data.get('status','') or request.data.get('availablity','')
-        product_category = request.data.get('category','')
-        product_image = request.FILES.get('product_image','')
-        product_quantity = request.data.get('quantity','')
-        product_sku = request.data.get('sku', '')
-        branch_id = request.data.get('branch_id')
-        salon_id = request.data.get('salon_id')
+        data = request.data
+        if not hasattr(data, 'get'):
+            return Response({
+                "message": "Invalid JSON body; expected an object",
+                "status": BAD_REQUEST_STATUS,
+            }, status=BAD_REQUEST_STATUS)
+
+        product_name = data.get('name', '')
+        product_price = data.get('price', '')
+        product_descrition = data.get('description', '')
+        product_availablity = data.get('status', '') or data.get('availablity', '')
+        product_category = data.get('category', '')
+        product_image = request.FILES.get('product_image', '')
+        product_quantity = data.get('quantity', '')
+        product_sku = data.get('sku', '')
+        branch_id = data.get('branch_id')
+        salon_id = data.get('salon_id')
 
         try:
             if branch_id:
@@ -117,7 +124,7 @@ def getAllProducts(request, column_name=None, column_value=None):
                 if branch_associated is None:
                     raise Branch.DoesNotExist
             else:
-                user = User.objects.get(id=request.data.get('user_id'))
+                user = User.objects.get(id=data.get('user_id'))
                 salon_associate = SalonDetails.objects.filter(user=user).first()
                 if salon_associate is None:
                     return Response({
@@ -134,7 +141,7 @@ def getAllProducts(request, column_name=None, column_value=None):
             })
 
         if product_image == None or not product_image or product_image == "":
-            product_image= None
+            product_image = None
 
         try:
             # Creating Product object with data from POST request
@@ -145,8 +152,8 @@ def getAllProducts(request, column_name=None, column_value=None):
                 category=product_category,
                 image=product_image,
                 availablity=product_availablity,
-                quantity = product_quantity,
-                branch = branch_associated,
+                quantity=product_quantity,
+                branch=branch_associated,
                 sku=product_sku or '',
             )
             product_save.save()

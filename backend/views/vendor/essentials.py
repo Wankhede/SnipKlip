@@ -37,8 +37,10 @@ def get_stylist_details(request):
 def create_username(first_name, last_name):
     # Generate a random 3-digit number
     random_number = random.randint(100, 999)
-    # Combine the first name, last name, and random number to create the username
-    username = first_name.lower() + "." + last_name.lower() + str(random_number)
+    # Coerce non-strings (chaos / malformed payloads) so callers never AttributeError.
+    first = str(first_name or 'user').lower()
+    last = str(last_name or 'guest').lower()
+    username = first + "." + last + str(random_number)
     return username
 
 def search_customers(request):

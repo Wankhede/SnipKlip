@@ -243,30 +243,48 @@ def getAllBillings(request, column_name=None, column_value=None):
         else:
             selected_branch_id = request.GET.get('branch_id')
             request_args = request.GET
-            if selected_branch_id == '-1':
-                all_invoices = get_all_table_records(request, Invoice)
-            else:
-                branch = Branch.objects.get(id=selected_branch_id)
-                all_invoices = Invoice.objects.filter(
-                    appointment__branch=branch,appointment__booking_status__in =['Availed','Pending','Booked']).order_by('-id')
+            try:
+                if selected_branch_id == '-1':
+                    all_invoices = get_all_table_records(request, Invoice)
+                else:
+                    if selected_branch_id in (None, ''):
+                        return Response({
+                            'message': 'branch_id is required',
+                            'status': BAD_REQUEST_STATUS,
+                        }, status=BAD_REQUEST_STATUS)
+                    branch = Branch.objects.get(id=selected_branch_id)
+                    all_invoices = Invoice.objects.filter(
+                        appointment__branch=branch,
+                        appointment__booking_status__in=['Availed', 'Pending', 'Booked'],
+                    ).order_by('-id')
 
-            all_invoices = apply_filters(Invoice, all_invoices, request_args)
+                all_invoices = apply_filters(Invoice, all_invoices, request_args)
 
-            total_rows = all_invoices.count()
-            
-            # Call the custom_pagination function to get the paginated items.
-            invoices = custom_pagination(request, all_invoices)
+                total_rows = all_invoices.count()
 
-            serializer = InvoiceSerializer(invoices, many=True)
-            # Return the serialized data in the response
-            return Response({
-                "data": {
-                    "count": total_rows,
-                    "rows": serializer.data
-                },
-                "message": APIMessages.BILLING_RETRIEVED.value,
-                "status": SUCCESS_STATUS_CODE,
-            })
+                # Call the custom_pagination function to get the paginated items.
+                invoices = custom_pagination(request, all_invoices)
+
+                serializer = InvoiceSerializer(invoices, many=True)
+                # Return the serialized data in the response
+                return Response({
+                    "data": {
+                        "count": total_rows,
+                        "rows": serializer.data
+                    },
+                    "message": APIMessages.BILLING_RETRIEVED.value,
+                    "status": SUCCESS_STATUS_CODE,
+                })
+            except (Branch.DoesNotExist, ValueError, TypeError):
+                return Response({
+                    'message': APIMessages.USER_OR_BRANCH_NOT_EXISTS.value,
+                    'status': BAD_REQUEST_STATUS,
+                }, status=BAD_REQUEST_STATUS)
+            except Exception as e:
+                return Response({
+                    'message': f'{APIMessages.INTERNAL_SERVER_ERROR.value}: {e}',
+                    'status': FAILED_STATUS_CODE,
+                }, status=BAD_REQUEST_STATUS)
 
     elif request.method == "PUT":
         data = request.data

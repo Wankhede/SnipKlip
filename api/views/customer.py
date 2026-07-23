@@ -80,25 +80,30 @@ def getAllCustomers(request, column_name=None, column_value=None):
     elif request.method == "POST":
         try:
             data = request.data
+            if not hasattr(data, 'get'):
+                return Response({
+                    "message": "Invalid JSON body; expected an object",
+                    "status": BAD_REQUEST_STATUS,
+                }, status=BAD_REQUEST_STATUS)
+
+            required = ('branch_id', 'email', 'mobile', 'first_name', 'last_name', 'gender')
+            missing = [f for f in required if data.get(f) in (None, '')]
+            if missing:
+                return Response({
+                    "message": f"Missing required fields: {', '.join(missing)}",
+                    "status": BAD_REQUEST_STATUS,
+                }, status=BAD_REQUEST_STATUS)
+
             selected_branch_id = data['branch_id']
             branch = Branch.objects.get(id=selected_branch_id)
-            email = request.data["email"]
-            # try:
-            #     user = User.objects.get(email=email)
-            # except User.DoesNotExist:
-            #     user = None
-            # if user is not None:
-            #     return Response({
-            #             "message": APIMessages.EMAIL_ALREADY_EXISTS.value,
-            #             "status": BAD_REQUEST_STATUS,
-            #     })
-            mobile_number = request.data["mobile"]
-            first_name = request.data["first_name"]
-            last_name = request.data["last_name"]
-            gender = request.data["gender"]
-            username = create_username(first_name,last_name)
+            email = data["email"]
+            mobile_number = data["mobile"]
+            first_name = str(data["first_name"])
+            last_name = str(data["last_name"])
+            gender = data["gender"]
+            username = create_username(first_name, last_name)
             username = "".join(username.split())
-            
+
             user = User.objects.create(
                 username=username,
                 email=email,
@@ -121,9 +126,9 @@ def getAllCustomers(request, column_name=None, column_value=None):
 
             branch_mobile = BranchCustomerMobile(
                 branch=branch,
-                customer_user = customer,
-                mobile = mobile_number
-                )
+                customer_user=customer,
+                mobile=mobile_number
+            )
             branch_mobile.save()
 
             customer.mobile_number.add(branch_mobile)
@@ -138,12 +143,22 @@ def getAllCustomers(request, column_name=None, column_value=None):
                 "message": APIMessages.CUSTOMER_CREATED.value,
                 "status": SUCCESS_STATUS_CODE,
             })
+        except Branch.DoesNotExist:
+            return Response({
+                "message": APIMessages.USER_OR_BRANCH_NOT_EXISTS.value,
+                "status": BAD_REQUEST_STATUS,
+            }, status=BAD_REQUEST_STATUS)
+        except (KeyError, TypeError, ValueError, AttributeError) as e:
+            return Response({
+                "message": f"Invalid customer payload: {e}",
+                "status": BAD_REQUEST_STATUS,
+            }, status=BAD_REQUEST_STATUS)
         except Exception as e:
             log_error_with_api_endpoint(request, e)
             return Response({
                 "message": APIMessages.INTERNAL_SERVER_ERROR.value,
                 "status": FAILED_STATUS_CODE,
-            })
+            }, status=BAD_REQUEST_STATUS)
     
     elif request.method == "PUT":
         try:

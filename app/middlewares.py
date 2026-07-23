@@ -25,13 +25,19 @@ class AccessControlMiddleware:
                 return self.get_response(request)
 
             try:
-                data = json.loads(request.body)
-            except json.JSONDecodeError:
-                data = request.GET
+                raw = json.loads(request.body) if request.body else {}
+            except (json.JSONDecodeError, UnicodeDecodeError, ValueError):
+                raw = request.GET
+
+            # Bodies may be lists/scalars from clients or chaos tests — never AttributeError.
+            if hasattr(raw, 'get') and not isinstance(raw, (list, tuple, str, bytes)):
+                data = raw
+            else:
+                data = {}
 
             try:
                 current_page = data.get('current_page', 'NULL')
-            except KeyError:
+            except (KeyError, AttributeError, TypeError):
                 current_page = "NULL"
 
             # Get a list of allowed paths from the database

@@ -5,9 +5,3 @@ playwright-report/
 .playwright/
 *.log
 .env
-node_modules/
-test-results/
-playwright-report/
-reports/html/
-reports/results.json
-.DS_Store

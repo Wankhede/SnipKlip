@@ -61,9 +61,21 @@ def getAllJobs(request, id=None):
         job_tag = request.data.get('job_tag','')
         job_image = request.FILES.get('job_image','')
         job_quantity = request.data.get('quantity','')
-        # user = User.objects.get(username="Abhi_Raj")
-        user = User.objects.get(id=request.data.get('user_id'))
-        salon_associate = SalonDetails.objects.get(user=user)
+        data = request.data
+        if not hasattr(data, 'get'):
+            return Response({
+                'message': 'Invalid JSON body; expected an object',
+                'status': BAD_REQUEST_STATUS,
+            }, status=BAD_REQUEST_STATUS)
+
+        try:
+            user = User.objects.get(id=data.get('user_id'))
+            salon_associate = SalonDetails.objects.get(user=user)
+        except (User.DoesNotExist, SalonDetails.DoesNotExist, TypeError, ValueError) as e:
+            return Response({
+                'message': f'Invalid job payload: {e}',
+                'status': BAD_REQUEST_STATUS,
+            }, status=BAD_REQUEST_STATUS)
 
         if job_image == None or not job_image or job_image == "":
             job_image= None
