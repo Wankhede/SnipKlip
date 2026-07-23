@@ -1,4 +1,4 @@
-from api.constants import SUCCESS_STATUS_CODE, APIMessages
+from api.constants import SUCCESS_STATUS_CODE, APIMessages, METHOD_NOT_ALLOWED
 from backend.models import KanbanComment, KanbanItem, KanbanProfile, KanbanColumn
 from api.serializers import (
     KanbanProfileSerializer, KanbanItemSerializer, KanbanColumnSerializer
@@ -140,10 +140,9 @@ def handle_user_story(request, profile_id=None):
 @throttle_classes([SustainedRateThrottle])
 @jwt_authentication_required
 def handle_profiles(request, profile_id=None):
-    # get profiles
-    if request.method == 'POST':
-        # Get all kanban profiles
-        data = request.data
+    # Frontend uses POST to fetch; also accept GET with query params
+    if request.method in ('POST', 'GET'):
+        data = request.data if request.method == 'POST' else request.GET
         branch_id = data.get('branch_id')
         user_id = data.get('user_id')
         salon_id = data.get('salon_id')
@@ -152,43 +151,53 @@ def handle_profiles(request, profile_id=None):
         total_rows = kanban_profiles.count()
         serializer = KanbanProfileSerializer(kanban_profiles.all(), many=True)
 
-        # Return the serialized data in the response
         return Response({
             "data": {
                 "count": total_rows,
                 "rows": list(serializer.data)
             },
-            "message": APIMessages.ALL_EXPENSE_RETRIEVED.value,
+            "message": APIMessages.ALL_KANBAN_ITEMS_RETRIEVED.value,
             "status": SUCCESS_STATUS_CODE,
         })
+    return Response({
+        "message": APIMessages.METHOD_NOT_ALLOWED.value,
+        "status": METHOD_NOT_ALLOWED,
+    }, status=METHOD_NOT_ALLOWED)
 
 
 @api_view(['GET', 'POST', 'PUT', 'DELETE'])
 @throttle_classes([SustainedRateThrottle])
 @jwt_authentication_required
 def handle_items(request, profile_id=None):
-    # get profiles
-    if request.method == 'POST':
-        # Get all kanban profiles
-        data = request.data
+    if request.method in ('POST', 'GET'):
+        data = request.data if request.method == 'POST' else request.GET
         branch_id = data.get('branch_id')
         user_id = data.get('user_id')
         salon_id = data.get('salon_id')
         kanban_profile = KanbanProfile.objects.filter(
             user_id=user_id, branch_id=branch_id, salon_id=salon_id).first()
+        if kanban_profile is None:
+            return Response({
+                "data": {"count": 0, "rows": []},
+                "message": APIMessages.ALL_KANBAN_ITEMS_RETRIEVED.value,
+                "status": SUCCESS_STATUS_CODE,
+            })
         kanban_items = kanban_profile.kanban_items
         total_rows = kanban_items.count()
         serializer = KanbanItemSerializer(kanban_items, many=True)
 
-        # Return the serialized data in the response
         return Response({
             "data": {
                 "count": total_rows,
                 "rows": list(serializer.data)
             },
-            "message": APIMessages.ALL_EXPENSE_RETRIEVED.value,
+            "message": APIMessages.ALL_KANBAN_ITEMS_RETRIEVED.value,
             "status": SUCCESS_STATUS_CODE,
         })
+    return Response({
+        "message": APIMessages.METHOD_NOT_ALLOWED.value,
+        "status": METHOD_NOT_ALLOWED,
+    }, status=METHOD_NOT_ALLOWED)
 
 
 @api_view(['GET', 'POST', 'PUT', 'DELETE'])
@@ -272,58 +281,28 @@ def add_kanban_items(request, profile_id=None):
 @throttle_classes([SustainedRateThrottle])
 @jwt_authentication_required
 def handle_columns(request, column_id=None):
-    # get profiles
-    if request.method == 'POST':
-        # Get all kanban profiles
-        data = request.data
+    if request.method in ('POST', 'GET'):
+        data = request.data if request.method == 'POST' else request.GET
         branch_id = data.get('branch_id')
         user_id = data.get('user_id')
         salon_id = data.get('salon_id')
-        item = data.get('item')
 
-
-        # Check if a Kanban profile already exists for the user, salon, and branch combination
         kanban_profile, created = KanbanProfile.objects.get_or_create(
             user_id=user_id,
             salon_id=salon_id,
             branch_id=branch_id
         )
-        # item_due_date = datetime.strptime(
-        #     item['dueDate'], "%Y-%m-%dT%H:%M:%S.%fZ")
-        # new_kanban_item = KanbanItem(
-        #     assign=kanban_profile.user,
-        #     description=item['description'],
-        #     dueDate=item_due_date,
-        #     title=item['title'],
-        #     priority=item['priority'],
-
-        # )
-        # new_kanban_item.save()
-
-        # kanban_profile.kanban_items.add(new_kanban_item)
-        # kanban_profile.save()
 
         kanban_columns = kanban_profile.kanban_columns
         total_rows = kanban_columns.count()
         serializer = KanbanColumnSerializer(kanban_columns, many=True)
 
-        # if not created:
-        #     # If the profile already exists, add Kanban items to the existing profile
-        #     for item_id in kanban_items:
-        #         kanban_item = KanbanItem.objects.get(pk=item_id)
-        #         kanban_profile.kanban_items.add(kanban_item)
-
-        # else:
-        #     # If the profile was created, assign the Kanban items directly
-        #     kanban_profile.kanban_items.set(kanban_items)
-
-        # Return the serialized data in the response
         return Response({
             "data": {
                 "count": total_rows,
                 "rows": list(serializer.data)
             },
-            "message": APIMessages.ALL_EXPENSE_RETRIEVED.value,
+            "message": APIMessages.ALL_KANBAN_ITEMS_RETRIEVED.value,
             "status": SUCCESS_STATUS_CODE,
         })
 
@@ -338,6 +317,11 @@ def handle_columns(request, column_id=None):
             "message": APIMessages.KANBAN_COLUMN_DELETED.value,
             "status": SUCCESS_STATUS_CODE,
         })
+
+    return Response({
+        "message": APIMessages.METHOD_NOT_ALLOWED.value,
+        "status": METHOD_NOT_ALLOWED,
+    }, status=METHOD_NOT_ALLOWED)
 
 
 @api_view(['GET', 'POST', 'PUT', 'DELETE'])

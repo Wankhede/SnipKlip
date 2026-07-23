@@ -200,16 +200,26 @@ def payment_callback(request):
 @throttle_classes([SustainedRateThrottle])
 @jwt_authentication_required
 def getSubscriptions(request):
-    salon_id = request.GET['salon_id']
-    branch_id = request.GET['branch_id']
+    # Prefer query params; fall back to JSON body (axios often posts context fields)
+    data = request.GET if request.method == 'GET' and request.GET else request.data
+    salon_id = data.get('salon_id') if hasattr(data, 'get') else None
+    branch_id = data.get('branch_id') if hasattr(data, 'get') else None
+    if salon_id in (None, '', 'null', 'undefined') or branch_id in (None, '', 'null', 'undefined'):
+        return Response({
+            'message': APIMessages.USER_OR_BRANCH_NOT_EXISTS.value,
+            'status': BAD_REQUEST_STATUS,
+        }, status=BAD_REQUEST_STATUS)
     try:
-        if branch_id == "-1" and salon_id == "-1":
+        if str(branch_id) == "-1" and str(salon_id) == "-1":
             subscription = get_all_table_records(request, Subscription)
         else:
             try:
                 salon = SalonDetails.objects.get(id=salon_id)
-            except Exception as e:
-                return Response({'message': APIMessages.USER_OR_BRANCH_NOT_EXISTS.value,'status':BAD_REQUEST_STATUS})
+            except Exception:
+                return Response({
+                    'message': APIMessages.USER_OR_BRANCH_NOT_EXISTS.value,
+                    'status': BAD_REQUEST_STATUS,
+                })
             subscription = Subscription.objects.filter(salon=salon)
         total_rows = subscription.count()
         serializer = SubscriptionSerializer(subscription, many=True)
@@ -222,7 +232,7 @@ def getSubscriptions(request):
             "message": APIMessages.ALL_SUBSCRIPTION_RETRIEVED.value,
             "status": SUCCESS_STATUS_CODE,
         })
-    except Exception as e:
+    except Exception:
         return Response({
             "message": APIMessages.SUBSCRIPTION_NOT_RETRIEVED.value,
             "status": FAILED_STATUS_CODE,

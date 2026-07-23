@@ -38,11 +38,17 @@ class AccessControlMiddleware:
             allowed_path = list(AllowedPath.objects.all().values_list('path_name', flat=True))
 
             # Check if the path is allowed or user is an Admin
-            if request.path in allowed_path or not data or data.get('group') == "Admin":
+            # QueryDict.get returns None when missing; empty QueryDict is falsy only when no keys.
+            group_name = ''
+            if hasattr(data, 'get'):
+                group_name = str(data.get('group') or '').strip()
+            if request.path in allowed_path or not data or group_name.lower() == "admin":
                 pass
             else:
-                # Check for subscription details
-                if data.get('subscription_name', '').lower() in {'null', 'NULL'}:
+                # Check for subscription details (JSON null / missing must not crash)
+                raw_subscription = data.get('subscription_name') if hasattr(data, 'get') else None
+                subscription_name = '' if raw_subscription is None else str(raw_subscription).strip()
+                if subscription_name.lower() in {'', 'null', 'none'}:
                     return HttpResponseBadRequest("DO-NOT-HAVE-SUBSCRIPTION")
                 try:
                     user = User.objects.get(id=data.get('user_id'))
@@ -66,21 +72,42 @@ class AccessControlMiddleware:
 
                     if str(control.key_name) == current_page and any(group in control_group for group in user_group):
                         try:
-                            subscription = Subscription.objects.get(
-                                paid=True,
-                                salon=salon,
-                                name_of_subscription=data.get('subscription_name'),
-                                end_date__gt=current_datetime
+                            subscription = (
+                                Subscription.objects.filter(
+                                    paid=True,
+                                    salon=salon,
+                                    name_of_subscription=subscription_name,
+                                    end_date__gt=current_datetime,
+                                )
+                                .order_by('-end_date')
+                                .first()
                             )
-                            subscription_type = SubscriptionType.objects.get(
+                            if subscription is None:
+                                subscription = (
+                                    Subscription.objects.filter(
+                                        paid=True,
+                                        salon=salon,
+                                        name_of_subscription__iexact=subscription_name,
+                                        end_date__gt=current_datetime,
+                                    )
+                                    .order_by('-end_date')
+                                    .first()
+                                )
+                            if subscription is None:
+                                return HttpResponseBadRequest("DO-NOT-HAVE-SUBSCRIPTION")
+                            subscription_type = SubscriptionType.objects.filter(
                                 subscription_type=subscription.name_of_subscription
-                            )
+                            ).first() or SubscriptionType.objects.filter(
+                                subscription_type__iexact=subscription.name_of_subscription
+                            ).first()
+                            if subscription_type is None:
+                                return HttpResponseBadRequest("DO-NOT-HAVE-SUBSCRIPTION")
 
                             if subscription_type in control.subscription.all():
                                 pass
                             else:
                                 return HttpResponseBadRequest("DO-NOT-HAVE-SUBSCRIPTION")
-                        except Subscription.DoesNotExist:
+                        except Exception:
                             return HttpResponseBadRequest("DO-NOT-HAVE-SUBSCRIPTION")
                     else:
                         control_group = []

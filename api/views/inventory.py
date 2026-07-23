@@ -34,14 +34,14 @@ def getAllProducts(request, column_name=None, column_value=None):
                     "count": total_rows,
                     "rows": serializer.data
                 },
-                "message": APIMessages.ALL_EXPENSE_RETRIEVED.value,
+                "message": APIMessages.ALL_PRODUCT_RETRIEVED.value,
                 "status": SUCCESS_STATUS_CODE,
             })
         else:
             data = request.GET
             try:
-                # Check if column_name is a valid field in the Expense model
-                valid_fields = [f.name for f in Expense._meta.get_fields()]
+                # Check if column_name is a valid field in the Product model
+                valid_fields = [f.name for f in Product._meta.get_fields()]
                 if column_name not in valid_fields:
                     return Response({"message": f"Invalid column name: {column_name}", "status":400})
 
@@ -101,17 +101,40 @@ def getAllProducts(request, column_name=None, column_value=None):
         product_name = request.data.get('name','')
         product_price = request.data.get('price','')
         product_descrition = request.data.get('description','')
-        product_availablity = request.data.get('status','')
+        product_availablity = request.data.get('status','') or request.data.get('availablity','')
         product_category = request.data.get('category','')
         product_image = request.FILES.get('product_image','')
         product_quantity = request.data.get('quantity','')
-        user = User.objects.get(id=request.data.get('user_id'))
-        salon_associate = SalonDetails.objects.get(user=user)
-        branch_associated = Branch.objects.get(salon=salon_associate)
+        product_sku = request.data.get('sku', '')
+        branch_id = request.data.get('branch_id')
+        salon_id = request.data.get('salon_id')
+
+        try:
+            if branch_id:
+                branch_associated = Branch.objects.get(id=branch_id)
+            elif salon_id:
+                branch_associated = Branch.objects.filter(salon_id=salon_id).first()
+                if branch_associated is None:
+                    raise Branch.DoesNotExist
+            else:
+                user = User.objects.get(id=request.data.get('user_id'))
+                salon_associate = SalonDetails.objects.filter(user=user).first()
+                if salon_associate is None:
+                    return Response({
+                        "message": APIMessages.SALON_NOT_FOUND.value,
+                        "status": BAD_REQUEST_STATUS,
+                    })
+                branch_associated = Branch.objects.filter(salon=salon_associate).first()
+                if branch_associated is None:
+                    raise Branch.DoesNotExist
+        except (User.DoesNotExist, Branch.DoesNotExist, SalonDetails.DoesNotExist, TypeError, ValueError):
+            return Response({
+                "message": APIMessages.PRODUCT_NOT_FOUND.value,
+                "status": BAD_REQUEST_STATUS,
+            })
+
         if product_image == None or not product_image or product_image == "":
             product_image= None
-        else:
-            product_image = product_image
 
         try:
             # Creating Product object with data from POST request
@@ -123,7 +146,8 @@ def getAllProducts(request, column_name=None, column_value=None):
                 image=product_image,
                 availablity=product_availablity,
                 quantity = product_quantity,
-                branch = branch_associated
+                branch = branch_associated,
+                sku=product_sku or '',
             )
             product_save.save()
             return Response({

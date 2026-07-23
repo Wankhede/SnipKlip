@@ -6,8 +6,12 @@ from api.constants import *
 
 # API to handle todos with HTTP methods GET, POST, and PUT
 @api_view(['GET', 'POST', 'PUT'])
-def todos_api(request, id=None):
+def todos_api(request, column_name=None, column_value=None, id=None):
     try:
+        # URL route may pass column_value; legacy callers may pass id=
+        if id is None and column_value is not None:
+            id = column_value
+
         # Check if the request method is GET
         if request.method == 'GET':
             # If no specific 'id' provided, retrieve all todos
@@ -20,7 +24,7 @@ def todos_api(request, id=None):
                         "count": todos.count(),
                         "rows": serializer.data
                     },
-                    "message": APIMessages.ALL_TODO_RETRIEVED.values,
+                    "message": APIMessages.ALL_TODO_RETRIEVED.value,
                     "status": SUCCESS_STATUS_CODE
                 }
             else:

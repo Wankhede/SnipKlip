@@ -28,7 +28,7 @@ def getAllJobs(request, id=None):
                     "count": len(jobs),
                     "rows": serializer.data
                 },
-                "message": APIMessages.ALL_EXPENSE_RETRIEVED.value,
+                "message": APIMessages.ALL_JOB_RETRIEVED.value,
                 "status": SUCCESS_STATUS_CODE,
             })
         else:

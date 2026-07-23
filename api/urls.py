@@ -43,7 +43,8 @@ urlpatterns = [
     path('customer-booking-history/<int:id>/',
          customer.getCustomerBookings, name='getCustomerBookings'),
 
-    path('check-availability/', slot.check_seat_availability,
+    # Frontend posts to check-availability/; keep availability-check/ as alias.
+    path('check-availability/', booking.check_seat_available,
          name='check_availability'),
     path('availability-check/', booking.check_seat_available,
          name='check_seat_available'),
@@ -119,9 +120,7 @@ urlpatterns = [
     path('get-employees/', getStaff, name='get_staff'),
     path('salary/', salary.getAllSalary, name='get_all_salary'),
     path('salary/<str:column_name>/<int:column_value>/',
-         salary.getAllSalary, name='get_all_salary'),
-    path('salary/<str:column_name>/<int:column_value>/',
-         salary.editSalary, name='EditSalary'),
+         salary.getAllSalary, name='get_salary_by_column'),
 
     path('todos/', todos.todos_api, name='todo-list'),
     path('todos/<str:column_name>/<int:column_value>/',

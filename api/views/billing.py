@@ -16,7 +16,17 @@ import string
 def getAllBillings(request, column_name=None, column_value=None):
     if request.method == "POST":
         data = request.data
-        
+        required_fields = (
+            'branch_id', 'discount', 'discount_percentage', 'tax',
+            'payment_received', 'invoice_detail', 'customerInfo', 'salon_id', 'date',
+        )
+        missing = [f for f in required_fields if f not in data or data.get(f) in (None, '')]
+        if missing:
+            return Response({
+                'message': f'Missing required fields: {", ".join(missing)}',
+                'status': BAD_REQUEST_STATUS,
+            }, status=BAD_REQUEST_STATUS)
+
         # Extract basic data from the request
         branch_id = data['branch_id']
         discount = data['discount']
@@ -29,12 +39,17 @@ def getAllBillings(request, column_name=None, column_value=None):
 
         # Check if the branch exists
         branch_exists = Branch.objects.filter(id=branch_id).exists()
+        if not branch_exists:
+            return Response({
+                'message': APIMessages.USER_OR_BRANCH_NOT_EXISTS.value,
+                'status': BAD_REQUEST_STATUS,
+            }, status=BAD_REQUEST_STATUS)
         selected_branch = Branch.objects.get(id=branch_id)
-        
+
         service_list = []  # List to store service/product details
         staff_list = []    # List to store staff details
 
-        if branch_exists:
+        try:
             # Iterate through invoice details to extract service/product and staff info
             for info in data['invoice_detail']:
                 invoice_item = info['invoice_item']
@@ -50,19 +65,24 @@ def getAllBillings(request, column_name=None, column_value=None):
                         branch=selected_branch, name=invoice_item['attribute_name'])
 
                 service_list.append(invoice_item_dict)
-                
+
                 # Retrieve the staff associated with the service/product
                 staff_ids = [staff['attribute_id'] for staff in info['staff']]
                 staff_list.append(Employee.objects.filter(id__in=staff_ids, status="Active"))
 
-        # Extract customer information
-        user_data = data['customerInfo']
-        customer_user = Customer.objects.get(name=user_data['name'], email=user_data['email']).user
-        salon = SalonDetails.objects.get(id=data['salon_id'])
-        
-        # Parse and format the date
-        original_date = data['date']
-        date_selected = datetime.strptime(original_date, "%m/%d/%Y").strftime("%Y-%m-%d")
+            # Extract customer information
+            user_data = data['customerInfo']
+            customer_user = Customer.objects.get(name=user_data['name'], email=user_data['email']).user
+            salon = SalonDetails.objects.get(id=data['salon_id'])
+
+            # Parse and format the date
+            original_date = data['date']
+            date_selected = datetime.strptime(original_date, "%m/%d/%Y").strftime("%Y-%m-%d")
+        except (KeyError, TypeError, ValueError, Customer.DoesNotExist, Service.DoesNotExist, Product.DoesNotExist, SalonDetails.DoesNotExist) as e:
+            return Response({
+                'message': f'Invalid billing payload: {e}',
+                'status': BAD_REQUEST_STATUS,
+            }, status=BAD_REQUEST_STATUS)
 
         total_price = 0  # Initialize total price
         appointment_list = []  # List to store created appointments

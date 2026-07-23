@@ -34,7 +34,7 @@ def getAllCouponCodes(request, column_name=None, column_value=None):
                     "count": len(final_coupons_list),
                     "rows": list(serializer.data)
                 },
-                "message": APIMessages.ALL_EXPENSE_RETRIEVED.value,
+                "message": APIMessages.ALL_COUPON_RETRIEVED.value,
                 "status": SUCCESS_STATUS_CODE,
             })
         else:

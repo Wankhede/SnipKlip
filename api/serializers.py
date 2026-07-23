@@ -311,7 +311,15 @@ class KanbanProfileSerializer(serializers.ModelSerializer):
         return f"{obj.id}"
 
     def get_name(self, obj):
-        return f"{obj.user.name}"
+        user = getattr(obj, 'user', None)
+        if user is None:
+            return 'Unassigned'
+        display = (getattr(user, 'name', None) or '').strip()
+        if not display:
+            display = (user.get_full_name() or '').strip()
+        if not display:
+            display = user.username or f'User {user.id}'
+        return display
 
     class Meta:
         model = KanbanProfile

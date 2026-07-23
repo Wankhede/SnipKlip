@@ -214,6 +214,12 @@ def getSalon(request):
         branch_id = request.GET.get('branch_id')
         salon_id = request.GET.get('salon_id')
 
+        if branch_id in (None, '') or salon_id in (None, ''):
+            return Response({
+                "message": APIMessages.INVALID_PARAMETERS.value,
+                "status": FAILED_STATUS_CODE,
+            })
+
         # Handling scenario to retrieve all salons
         if int(branch_id) == -1 and int(salon_id) == -1:
             salons = SalonDetails.objects.all()
@@ -235,7 +241,7 @@ def getSalon(request):
             })
 
     # Handling exceptions
-    except ValueError:
+    except (ValueError, TypeError):
         return Response({
             "message": APIMessages.INVALID_PARAMETERS.value,
             "status": FAILED_STATUS_CODE,

@@ -4,14 +4,28 @@ from rest_framework.response import Response
 from api.serializers import ReviewSerializer
 from backend.models import *
 from api.constants import *
+from django.utils import timezone
 
 @api_view(['GET',"POST",'PUT','DELETE'])
 def getAllReviews(request, column_name=None):
     if request.method == "GET":
         data = request.GET
-        salon = SalonDetails.objects.get(id=data['salon_id'])
+        salon_id = data.get('salon_id')
+        branch_id = data.get('branch_id')
+        if not salon_id or not branch_id:
+            return Response({
+                "message": "salon_id and branch_id are required",
+                "status": BAD_REQUEST_STATUS,
+            })
+        try:
+            salon = SalonDetails.objects.get(id=salon_id)
+            selected_branch = Branch.objects.get(salon=salon, id=branch_id)
+        except (SalonDetails.DoesNotExist, Branch.DoesNotExist):
+            return Response({
+                "message": APIMessages.REVIEW_NOT_FOUND.value,
+                "status": NOT_FOUND_STATUS,
+            })
         current_datetime = timezone.now()
-        selected_branch = Branch.objects.get(salon=salon,id=data['branch_id'])
         if not Subscription.objects.filter(end_date__gt=current_datetime,
                                             name_of_subscription="PREMIUM",
                                             salon=salon,
@@ -89,10 +103,25 @@ def getAllReviews(request, column_name=None):
                     "status": FAILED_STATUS_CODE,
                 })
         else:
-            transaction_number = data['invoice_id']
+            transaction_number = data.get('invoice_id')
+            if not transaction_number:
+                return Response({
+                    "message": "invoice_id is required",
+                    "status": BAD_REQUEST_STATUS,
+                })
             try:
                 invoice = Invoice.objects.filter(transaction=transaction_number).first()
+                if invoice is None:
+                    return Response({
+                        "message": APIMessages.REVIEW_NOT_FOUND.value,
+                        "status": NOT_FOUND_STATUS,
+                    })
                 review = Review.objects.filter(invoice=invoice).first()
+                if review is None:
+                    return Response({
+                        "status": FAILED_STATUS_CODE,
+                        "message": APIMessages.REVIEW_NOT_FOUND.value,
+                    })
                 if review.comment != "":
                     return Response({
                         "message": APIMessages.CANT_SEE_REVIEW.value,
@@ -160,7 +189,7 @@ def getAllReviews(request, column_name=None):
 
             try:
                 review = Review.objects.get(
-                    id=id
+                    id=column_name
                 )
                 if review.user != customer or review.service != service:
                     return Response({
@@ -179,3 +208,7 @@ def getAllReviews(request, column_name=None):
                     "message": APIMessages.ERROR.value,
                     "status": FAILED_STATUS_CODE,
                 })
+        return Response({
+            "message": "review id is required",
+            "status": FAILED_STATUS_CODE,
+        })

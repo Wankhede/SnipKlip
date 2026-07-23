@@ -25,86 +25,105 @@ import pytz
 
 @api_view(['POST'])
 def check_seat_available(request):
-    data = request.data
-    booking_platform = str(request.data["booking_platform"]).upper()
+    try:
+        data = request.data
+        required = ['booking_platform', 'start_time', 'booking_date', 'salon_id', 'user_id', 'branch_id', 'service']
+        missing = [key for key in required if key not in data or data.get(key) in (None, '')]
+        if missing:
+            return Response({
+                'message': f"Missing required fields: {', '.join(missing)}",
+                'status': BAD_REQUEST_STATUS,
+            })
 
-    start_time = request.data["start_time"]
-    start_time = datetime.datetime.strptime(start_time, '%Y-%m-%d %H:%M:%S')
-    start_time = (start_time.strftime('%H:%M:%S'))
-    start_time = datetime.datetime.strptime(start_time, "%H:%M:%S")
+        booking_platform = str(request.data["booking_platform"]).upper()
 
-    date_selected = request.data["booking_date"]
-    date_selected = parse_datetime(date_selected)
+        start_time = request.data["start_time"]
+        start_time = datetime.datetime.strptime(start_time, '%Y-%m-%d %H:%M:%S')
+        start_time = (start_time.strftime('%H:%M:%S'))
+        start_time = datetime.datetime.strptime(start_time, "%H:%M:%S")
 
-    if date_selected == None:
-        date_selected = datetime.date.today()
+        date_selected = request.data["booking_date"]
+        date_selected = parse_datetime(date_selected)
 
-    salon_id = request.data["salon_id"]
-    user_id = request.data["user_id"]
-    branch_id = request.data['branch_id']
+        if date_selected == None:
+            date_selected = datetime.date.today()
 
-    user = User.objects.get(id=user_id)
-    branch = Branch.objects.get(id=branch_id)
-    salon_details = SalonDetails.objects.get(user=user, id=salon_id)
+        salon_id = request.data["salon_id"]
+        user_id = request.data["user_id"]
+        branch_id = request.data['branch_id']
 
-    services_id = []
-    staff_objects_list = []
+        user = User.objects.get(id=user_id)
+        branch = Branch.objects.get(id=branch_id)
+        salon_details = SalonDetails.objects.filter(id=salon_id).first()
+        if salon_details is None:
+            return Response({
+                'message': APIMessages.SALON_NOT_FOUND.value,
+                'status': BAD_REQUEST_STATUS,
+            })
 
-    # Iterate through serviceAssignments
-    for assignment in data['service']:
-        # Extract and append service_ids to the services_id list
-        service_ids = [service['attribute_id']
-                       for service in assignment['service']]
-        services_id.extend(service_ids)
+        services_id = []
+        staff_objects_list = []
 
-        # Get the staff objects for the current assignment
-        staff_objects = assignment.get('staff', [])
+        # Iterate through serviceAssignments
+        for assignment in data['service']:
+            # Extract and append service_ids to the services_id list
+            service_ids = [service['attribute_id']
+                           for service in assignment['service']]
+            services_id.extend(service_ids)
 
-        # Query Employee objects based on the extracted attribute_ids
-        staff_attribute_ids = [staff['attribute_id']
-                               for staff in staff_objects]
-        staff_query = Employee.objects.filter(id__in=staff_attribute_ids,status="Active")
+            # Get the staff objects for the current assignment
+            staff_objects = assignment.get('staff', [])
 
-        # Convert the Employee queryset to a list
-        staff_objects_list.append(list(staff_query))
+            # Query Employee objects based on the extracted attribute_ids
+            staff_attribute_ids = [staff['attribute_id']
+                                   for staff in staff_objects]
+            staff_query = Employee.objects.filter(id__in=staff_attribute_ids,status="Active")
 
-    services = Service.objects.filter(
-        user=salon_details, branch=branch, id__in=services_id)
+            # Convert the Employee queryset to a list
+            staff_objects_list.append(list(staff_query))
 
-    service_time_taken = []
-    for service in services:
-        service_time_taken.append(service.time_for_each_service)
+        services = Service.objects.filter(
+            user=salon_details, branch=branch, id__in=services_id)
 
-    if booking_platform == "BOOK APPOINTMENT":
-        date_selected = date_selected
-    else:
-        booking_platform = "WALK IN"
-        date_selected = datetime.date.today()
+        service_time_taken = []
+        for service in services:
+            service_time_taken.append(service.time_for_each_service)
 
-    # all Check-in Time & Check-out Time for Each Appointment
-    start_time_slot = []
-    end_time_slot = []
-    for i in range(0, len(services)):
-        time_till_now = sum(service_time_taken[0:i])
-        start_time_slot.append(
-            (start_time + timedelta(minutes=time_till_now)).strftime("%H:%M:%S"))
-        end_time_slot.append(
-            (start_time + timedelta(minutes=time_till_now + service_time_taken[i])).strftime("%H:%M:%S"))
+        if booking_platform == "BOOK APPOINTMENT":
+            date_selected = date_selected
+        else:
+            booking_platform = "WALK IN"
+            date_selected = datetime.date.today()
 
-    check_seat = check_seat_availability(
-        request, branch, start_time_slot, end_time_slot, date_selected, staff_objects_list)
-    response_data = check_seat.content.decode('utf-8')
-    response = json.loads(response_data)
+        # all Check-in Time & Check-out Time for Each Appointment
+        start_time_slot = []
+        end_time_slot = []
+        for i in range(0, len(services)):
+            time_till_now = sum(service_time_taken[0:i])
+            start_time_slot.append(
+                (start_time + timedelta(minutes=time_till_now)).strftime("%H:%M:%S"))
+            end_time_slot.append(
+                (start_time + timedelta(minutes=time_till_now + service_time_taken[i])).strftime("%H:%M:%S"))
 
-    if response['status'] != 200:
+        check_seat = check_seat_availability(
+            request, branch, start_time_slot, end_time_slot, date_selected, staff_objects_list)
+        response_data = check_seat.content.decode('utf-8')
+        response = json.loads(response_data)
+
         return Response({
             'message': response['message'],
             'status': response['status']
         })
-    else:
+    except (KeyError, TypeError, ValueError) as e:
         return Response({
-            'message': response['message'],
-            'status': response['status']
+            'message': f'Invalid availability payload: {e}',
+            'status': BAD_REQUEST_STATUS,
+        })
+    except Exception as e:
+        log_error_with_api_endpoint(request, e)
+        return Response({
+            'message': APIMessages.INTERNAL_SERVER_ERROR.value,
+            'status': FAILED_STATUS_CODE,
         })
 
 
@@ -245,6 +264,19 @@ def getAllBookings(request, column_name=None, column_value=None):
             })
     if request.method == "POST":
         data = request.data
+        required_fields = ('slot', 'booking_date', 'customer_id', 'booking_platform', 'salon_id', 'user_id', 'branch_id')
+        missing = [f for f in required_fields if f not in data or data.get(f) in (None, '', {})]
+        if missing:
+            return Response({
+                'message': f'Missing required fields: {", ".join(missing)}',
+                'status': BAD_REQUEST_STATUS,
+            }, status=BAD_REQUEST_STATUS)
+        if not isinstance(data.get('slot'), dict) or not data['slot']:
+            return Response({
+                'message': 'Field "slot" must be a non-empty object of service → staff → time selections.',
+                'status': BAD_REQUEST_STATUS,
+            }, status=BAD_REQUEST_STATUS)
+
         staff_list = []
         service_list = []
         start_time_list = []
@@ -252,19 +284,32 @@ def getAllBookings(request, column_name=None, column_value=None):
 
         staff_objects_list = []
 
-        for datas in data['slot']:
-            for staff in data['slot'][datas]:
-                if staff in staff_list:
-                    pass
-                else:
-                    staff_list.append(staff)
+        try:
+            for datas in data['slot']:
+                for staff in data['slot'][datas]:
+                    if staff in staff_list:
+                        pass
+                    else:
+                        staff_list.append(staff)
+        except (TypeError, KeyError) as e:
+            log_error_with_api_endpoint(request, e)
+            return Response({
+                'message': 'Invalid slot payload structure.',
+                'status': BAD_REQUEST_STATUS,
+            }, status=BAD_REQUEST_STATUS)
 
-        date_selected = request.data["booking_date"]
+        date_selected = request.data.get("booking_date")
 
         if date_selected:
             date_selected = parse_datetime(date_selected)
         else:
-            date_selected = datetime.datetime()
+            date_selected = None
+
+        if date_selected is None:
+            return Response({
+                'message': 'Invalid or missing booking_date.',
+                'status': BAD_REQUEST_STATUS,
+            }, status=BAD_REQUEST_STATUS)
 
         if date_selected.date() < datetime.datetime.today().date():
             return Response({

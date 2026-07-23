@@ -1,0 +1,22 @@
+{
+  "name": "snipklip-e2e-tests",
+  "version": "1.0.0",
+  "private": true,
+  "description": "SnipKlip architecture audit + Playwright API/UI e2e suite",
+  "scripts": {
+    "test": "playwright test",
+    "test:all": "node scripts/run-all.js",
+    "test:i18n": "playwright test tests/ui/i18n.spec.ts --project=chromium",
+    "test:ui": "playwright test --ui",
+    "test:audit": "node scripts/architecture-audit.js",
+    "test:api": "playwright test tests/api --project=api",
+    "test:browser": "playwright test tests/ui --project=chromium",
+    "test:journeys": "playwright test tests/ui/user-journeys.spec.ts --project=chromium",
+    "test:contract": "playwright test tests/api/api-contract.spec.ts --project=api",
+    "report": "playwright show-report reports/html"
+  },
+  "devDependencies": {
+    "@playwright/test": "^1.49.1",
+    "typescript": "^5.7.2"
+  }
+}

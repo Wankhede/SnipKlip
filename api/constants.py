@@ -193,8 +193,8 @@ class APIMessages(Enum):
     SERVICE_NOT_FOUND = "Service not found."
     SERVICE_CREATED = "Service created successfully."
     SERVICE_UPDATED = "Service updated successfully."
-    SERVICE_RETRIEVED = "Successfully retrieved expense."
-    ALL_SERVICE_RETRIEVED = "Successfully retrieved all expense(s)."
+    SERVICE_RETRIEVED = "Successfully retrieved service."
+    ALL_SERVICE_RETRIEVED = "Successfully retrieved all service(s)."
 
     # Kanban related messages
     KANBAN_ITEM_NOT_FOUND = "Kanban item not found."
@@ -255,6 +255,14 @@ class APIMessages(Enum):
     PRODUCT_CREATED = "Product created successfully."
     PRODUCT_UPDATED = "Product updated successfully."
     PRODUCT_RETRIEVED = "Successfully retrieved Product."
+    ALL_PRODUCT_RETRIEVED = "Successfully retrieved all product(s)."
+
+    # Job related messages
+    JOB_NOT_FOUND = "Job not found."
+    JOB_CREATED = "Job created successfully."
+    JOB_UPDATED = "Job updated successfully."
+    JOB_RETRIEVED = "Successfully retrieved job."
+    ALL_JOB_RETRIEVED = "Successfully retrieved all job(s)."
 
     # Payment related messages
     AMOUNT_NOT_PROVIDED = 'Amount not provided.'

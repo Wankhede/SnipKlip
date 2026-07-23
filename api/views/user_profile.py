@@ -8,7 +8,13 @@ from api.constants import *
 @api_view(['GET', 'PUT'])
 def get_user_profile(request):
     if request.method == "GET":
-        user_id = request.GET['user_id']
+        # Accept query param or JSON/body context (frontend often sends user_id in body)
+        user_id = request.GET.get('user_id') or request.data.get('user_id')
+        if user_id in (None, '', 'null', 'undefined'):
+            return Response({
+                "message": APIMessages.USER_ID_NOT_FOUND.value,
+                "status": BAD_REQUEST_STATUS,
+            }, status=BAD_REQUEST_STATUS)
         try:
             user = User.objects.get(id=user_id)
         except Exception:
@@ -16,35 +22,40 @@ def get_user_profile(request):
                 "message": APIMessages.USER_ID_NOT_FOUND.value,
                 "status": UNAUTHORISED_CODE,
             })
-        
-        user_serializer = UserSerializer(user,many=False)
+
+        user_serializer = UserSerializer(user, many=False)
         data = user_serializer.data
         data['dob'] = user.dob
         data['gender'] = user.gender
         data['username'] = user.username
         try:
-            subscription = Subscription.objects.get(user=user)
-            data['subscription_name'] = subscription.name_of_subscription
-        except Exception as e:
-            # Handle the case where the subscription does not exist for the user
+            subscription = Subscription.objects.filter(user=user).order_by('-end_date').first()
+            data['subscription_name'] = (
+                subscription.name_of_subscription if subscription else None
+            )
+        except Exception:
             data['subscription_name'] = None
-        
+
         return Response({
-                'data':data,
-                "message": APIMessages.USER_RETIREVED.value,
-                "status": SUCCESS_STATUS_CODE,
-            })
-    
+            'data': data,
+            "message": APIMessages.USER_RETIREVED.value,
+            "status": SUCCESS_STATUS_CODE,
+        })
+
     elif request.method == "PUT":
         try:
-            print(request.data)
             user = User.objects.get(id=request.user.id)
-            first_name = request.data['first_name']
-            last_name = request.data['last_name']
-            email = request.data['email']
-            mobile = request.data['mobile']
-            gender = request.data['gender']
-            dob = request.data['dob']
+            first_name = request.data.get('first_name')
+            last_name = request.data.get('last_name')
+            email = request.data.get('email')
+            mobile = request.data.get('mobile')
+            gender = request.data.get('gender')
+            dob = request.data.get('dob')
+            if None in (first_name, last_name, email, mobile, gender, dob):
+                return Response({
+                    "message": APIMessages.FILL_FIELDS.value,
+                    "status": BAD_REQUEST_STATUS,
+                })
 
             try:
                 user.first_name = first_name
@@ -55,22 +66,22 @@ def get_user_profile(request):
                 user.dob = dob
                 user.save()
                 return Response({
-                        "message": APIMessages.USER_UPDATED.value,
-                        "status": SUCCESS_STATUS_CODE,
-                    })
-            
+                    "message": APIMessages.USER_UPDATED.value,
+                    "status": SUCCESS_STATUS_CODE,
+                })
+
             except Exception:
                 return Response({
-                                "message": APIMessages.FILL_FIELDS.value,
-                                "status": BAD_REQUEST_STATUS,
-                                })
-            
+                    "message": APIMessages.FILL_FIELDS.value,
+                    "status": BAD_REQUEST_STATUS,
+                })
+
         except Exception:
             return Response({
-                            "message": APIMessages.USER_NOT_FOUND.value,
-                            "status": BAD_REQUEST_STATUS,
-                            })
-        
+                "message": APIMessages.USER_NOT_FOUND.value,
+                "status": BAD_REQUEST_STATUS,
+            })
+ 
 
 @api_view(['GET', 'PUT'])
 def get_user_detail(request):
