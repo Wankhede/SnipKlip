@@ -18,6 +18,9 @@ from cryptography.fernet import Fernet
 from api.constants import *
 from django.db.models import Q
 
+# Booking slot grid granularity (minutes)
+SLOT_INTERVAL_MINUTES = 30
+
 def check_seat_availability(request, branch, start_time_slot, end_time_slot, date_selected, staff_objects_list):
     try:
         if start_time_slot is None or end_time_slot is None:
@@ -122,16 +125,16 @@ Output data
 }
 '''
 
-def round_up_to_next_five_minutes(time_str):
+def round_up_to_next_slot_interval(time_str):
     # Parse the time string into a datetime object
     time_obj = datetime.strptime(time_str, "%H:%M:%S")
     
-    # Calculate minutes to add to round up to the nearest 5-minute mark
+    # Calculate minutes to add to round up to the nearest slot-interval mark
     minutes = time_obj.minute
-    if minutes % 5 == 0:
+    if minutes % SLOT_INTERVAL_MINUTES == 0:
         return time_obj.strftime("%H:%M:%S")
     
-    minutes_to_add = 5 - (minutes % 5)
+    minutes_to_add = SLOT_INTERVAL_MINUTES - (minutes % SLOT_INTERVAL_MINUTES)
     
     # Add the calculated minutes
     new_time_obj = time_obj + timedelta(minutes=minutes_to_add)
@@ -176,15 +179,15 @@ def getAvailableStaff(request):
     date_selected = data['booking_date']
     start_time_slot = []
     start_time = datetime.strptime(data['time_slot'].split(' ')[0], "%H:%M")
-    five_min_difference = timedelta(minutes=5)
+    slot_interval = timedelta(minutes=SLOT_INTERVAL_MINUTES)
     end_time = datetime.strptime(data['time_slot'].split(' ')[-2], "%H:%M")
 
-    current_time = start_time - five_min_difference
-    end_timer = end_time - five_min_difference
+    current_time = start_time - slot_interval
+    end_timer = end_time - slot_interval
 
-    # Loop to print times with 5-minute gap
+    # Loop to print times with slot-interval gap
     while current_time <= end_timer:
-        current_time += five_min_difference
+        current_time += slot_interval
         parsed_time = datetime.strptime(str(current_time)[:16], '%Y-%m-%d %H:%M')
         time_portion = parsed_time.strftime('%H:%M')
         start_time_slot.append(time_portion)
@@ -243,16 +246,16 @@ def getAvailableStaff(request):
         format_start_time = start_time.time()
         format_end_time = end_time.time()
         if parsedTime >= format_start_time and parsedTime < format_end_time:
-            round_time = round_up_to_next_five_minutes(str(parsedTime))
+            round_time = round_up_to_next_slot_interval(str(parsedTime))
             start_time = datetime(year=1900,month=1,day=1,hour=round_time.hour,minute=round_time.minute,second=round_time.second)
 
     
-    current_time = start_time - timedelta(minutes=5)
-    end_timer = end_time - timedelta(minutes=5)
+    current_time = start_time - timedelta(minutes=SLOT_INTERVAL_MINUTES)
+    end_timer = end_time - timedelta(minutes=SLOT_INTERVAL_MINUTES)
 
-    # Generate a list of time slots with a 5-minute gap
+    # Generate a list of time slots with SLOT_INTERVAL_MINUTES gap
     while current_time <= end_timer:
-        current_time += timedelta(minutes=5)
+        current_time += timedelta(minutes=SLOT_INTERVAL_MINUTES)
         time_portion = current_time.strftime('%H:%M')
         start_time_slot.append(time_portion)
 
