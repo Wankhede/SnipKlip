@@ -16,16 +16,16 @@ def getAllSalary(request, column_name=None, column_value=None):
             branch_id = data.get('branch_id')
             employee_id = data.get('employee_id')
             if not branch_id:
-                return Response({"message": "branch_id is required", "status": 400})
+                return Response({"message": "branch_id is required", "status": 400}, status=400)
 
             branch = Branch.objects.filter(id=branch_id).first()
             if branch is None:
-                return Response({"message": "Branch not found", "status": 404})
+                return Response({"message": "Branch not found", "status": 404}, status=404)
 
             if employee_id:
                 employee = Employee.objects.filter(branch=branch, id=employee_id).first()
                 if employee is None:
-                    return Response({"message": "Employee not found", "status": 404})
+                    return Response({"message": "Employee not found", "status": 404}, status=404)
                 salary = Salary.objects.filter(employee=employee)
             else:
                 salary = Salary.objects.filter(employee__branch=branch)
@@ -42,12 +42,12 @@ def getAllSalary(request, column_name=None, column_value=None):
 
         valid_fields = [f.name for f in Salary._meta.get_fields()]
         if column_name not in valid_fields:
-            return Response({"message": f"Invalid column name: {column_name}", "status": 400})
+            return Response({"message": f"Invalid column name: {column_name}", "status": 400}, status=400)
 
         filter_kwargs = {f"{column_name}__exact": column_value} if column_name else {}
         salary = Salary.objects.filter(**filter_kwargs).first()
         if salary is None:
-            return Response({"message": "Salary not found", "status": 404})
+            return Response({"message": "Salary not found", "status": 404}, status=404)
         serializer = SalarySerializer(salary, many=False)
         return Response({
             "data": {
@@ -58,7 +58,7 @@ def getAllSalary(request, column_name=None, column_value=None):
             "status": SUCCESS_STATUS_CODE,
         })
     except Exception as exc:
-        return Response({"message": str(exc), "status": 500})
+        return Response({"message": str(exc), "status": 500}, status=500)
 
 
 def editSalary(request):
