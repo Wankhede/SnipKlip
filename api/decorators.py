@@ -17,15 +17,17 @@ def jwt_authentication_required(view_func):
     @wraps(view_func)
     def _wrapped_view(request, *args, **kwargs):
         jwt_auth = JWTAuthentication()
-        user, auth = jwt_auth.authenticate(request)
-        if user is not None:
-            # User is authenticated, call the view function
-            return view_func(request, *args, **kwargs)
-        else:
-            # User is not authenticated
+        try:
+            auth_result = jwt_auth.authenticate(request)
+        except Exception:
+            auth_result = None
+        if auth_result is None:
             return JsonResponse(
-                {"message": "Authentication failed"},
+                {"message": "Authentication failed", "status": 401},
                 status=status.HTTP_401_UNAUTHORIZED
             )
+        user, auth = auth_result
+        request.user = user
+        return view_func(request, *args, **kwargs)
 
     return _wrapped_view

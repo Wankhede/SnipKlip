@@ -6,6 +6,7 @@ from rest_framework.response import Response
 from api.serializers import ServiceSerializer
 from backend.models import Branch, Employee, Service
 from api.constants import *
+from api.services.service_config import ServiceConfigError, parse_service_config, synchronize_services
 
 # @group_required('Manager')
 @api_view(['GET',"POST",'PUT'])
@@ -72,6 +73,7 @@ def getAllServices(request, column_name=None, column_value=None):
                 "message": APIMessages.INTERNAL_SERVER_ERROR.value,
                 "status": FAILED_STATUS_CODE,
             })  
+
 
     elif request.method == 'POST':
         try:
@@ -153,4 +155,48 @@ def getAllServices(request, column_name=None, column_value=None):
             return Response({
                 "message": APIMessages.INTERNAL_SERVER_ERROR.value,
                 "status": FAILED_STATUS_CODE,
-            })  
+            })
+
+
+@api_view(["POST"])
+@throttle_classes([SustainedRateThrottle])
+@jwt_authentication_required
+def upload_service_config(request):
+    branch_id = request.data.get("branch_id")
+    try:
+        branch = Branch.objects.select_related("salon__user", "manager").get(id=branch_id)
+    except (Branch.DoesNotExist, TypeError, ValueError):
+        return Response(
+            {"message": "Branch not found.", "status": 404},
+            status=404,
+        )
+
+    user = request.user
+    has_admin_access = user.is_superuser or user.groups.filter(name="Admin").exists()
+    owns_branch = branch.salon_id and branch.salon.user_id == user.id
+    manages_branch = branch.manager_id == user.id
+    if not (has_admin_access or owns_branch or manages_branch):
+        return Response(
+            {"message": "You do not have access to this branch.", "status": 403},
+            status=403,
+        )
+
+    try:
+        services = parse_service_config(request.FILES.get("file"))
+        result = synchronize_services(branch, services)
+    except ServiceConfigError as exc:
+        return Response(
+            {"message": str(exc), "status": 400},
+            status=400,
+        )
+
+    return Response(
+        {
+            "data": result,
+            "message": (
+                f"Services synchronized: {result['created']} created, "
+                f"{result['updated']} updated."
+            ),
+            "status": 200,
+        }
+    )

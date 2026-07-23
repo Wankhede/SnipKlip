@@ -1299,29 +1299,7 @@ paths:
       responses:
         '200':
           description: No response body
-  /satej-satyan/:
-    get:
-      operationId: satej_satyan_retrieve
-      tags:
-      - satej-satyan
-      security:
-      - cookieAuth: []
-      - basicAuth: []
-      - {}
-      responses:
-        '200':
-          description: No response body
-    post:
-      operationId: satej_satyan_create
-      tags:
-      - satej-satyan
-      security:
-      - cookieAuth: []
-      - basicAuth: []
-      - {}
-      responses:
-        '200':
-          description: No response body
+
   /soham-sunthankar/:
     get:
       operationId: soham_sunthankar_retrieve

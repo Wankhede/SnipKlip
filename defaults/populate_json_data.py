@@ -80,43 +80,56 @@ def load_Access_Control_Keys():
         with open('defaults/data/access_control_keys.json', 'r') as f:
             access_keys_data = json.load(f)
 
-        # Get a set of existing access keys from the database
-        existing_access_keys = list(SubscriptionAccessKeyAssociation.objects.all().values_list('key_name',flat=True))
+        # Ensure every group referenced by the JSON exists
+        for key in access_keys_data:
+            for group_name in key.get('group', []) or []:
+                Group.objects.get_or_create(name=group_name)
 
         for key in access_keys_data:
             key_name = key.get("access_key", "")
+            if not key_name:
+                continue
+
             tag = key.get("tag", "")
             section_name = key.get("section_name", "")
             description = key.get("description", "")
-            subscription_name = key.get('subscription', '')
-            group_name = key.get('group','')
+            subscription_names = key.get('subscription', []) or []
+            group_names = key.get('group', []) or []
 
-            if key_name and key_name not in existing_access_keys:
-                accesskey = SubscriptionAccessKeyAssociation(
-                    key_name=key_name,
-                    tag=tag,
-                    section_name=section_name,
-                    description=description
-                    )
-                accesskey.save()
+            accesskey, _created = SubscriptionAccessKeyAssociation.objects.get_or_create(
+                key_name=key_name,
+                defaults={
+                    'tag': tag,
+                    'section_name': section_name,
+                    'description': description,
+                },
+            )
+            # Keep metadata fresh for already-seeded keys
+            accesskey.tag = tag
+            accesskey.section_name = section_name
+            accesskey.description = description
+            accesskey.save()
 
-                for subscription in subscription_name:
-                    subscription = SubscriptionType.objects.get(subscription_type=subscription)
-                    accesskey.subscription.add(subscription)
-                    accesskey.save()
+            desired_subscriptions = []
+            for subscription_name in subscription_names:
+                subscription, _ = SubscriptionType.objects.get_or_create(
+                    subscription_type=subscription_name,
+                    defaults={'price': 100},
+                )
+                desired_subscriptions.append(subscription)
+            accesskey.subscription.set(desired_subscriptions)
 
-                for group in group_name:
-                    group = Group.objects.get(name=group)
-                    accesskey.group.add(group)
-                    accesskey.save()
+            desired_groups = [Group.objects.get(name=group_name) for group_name in group_names]
+            accesskey.group.set(desired_groups)
 
         return Response({
             "message": 'Successully Loaded Data',
             "status": 200,
-        })  
+        })
     except Exception as e:
         return Response({
             "data": {},
-            "message": '',
-            "status": '',
-        })  
+            "message": str(e),
+            "status": 500,
+        })
+

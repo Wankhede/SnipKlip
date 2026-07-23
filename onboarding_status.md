@@ -68,6 +68,22 @@ Updated: 2026-07-19
 - [Pending] Require only name and phone number.
 - [Pending] Make all other customer fields optional in model, API, and UI.
 
+## Data reactivity and service configuration workflow
+
+- [Fixed/Verified] Phase 1 — Append a newly registered customer to the visible React table immediately after a successful API response.
+- [Fixed/Verified] Phase 2 — Upload and validate `.json`, `.yaml`, or `.yml` service configuration files and synchronize services transactionally.
+- [Fixed/Verified] Phase 3 — Provide downloadable and copyable JSON/YAML service templates.
+- [Fixed/Verified] Verification — Confirm immediate customer rendering, graceful malformed-file errors, successful service synchronization, and stable layout.
+
+### Verification
+
+- `node scripts/test_customer_reactivity.js` → PASS
+- `python manage.py test api.test_service_config_upload api.test_user_details_performance api.test_post_login_stability --settings=app.settings.local` → PASS (8 tests)
+- `npx -p typescript@4.8.4 tsc -p tsconfig.json --noEmit` → PASS
+- Next.js production build under Node 18 → PASS
+- Invalid JSON endpoint test → HTTP 400 with line/column feedback and zero writes
+- Valid JSON/YAML endpoint tests → HTTP 200 with transactional create/update synchronization
+
 ## Baseline
 
 - Backend branch: `dev`

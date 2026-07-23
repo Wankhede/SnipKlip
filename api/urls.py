@@ -91,6 +91,7 @@ urlpatterns = [
     path('reviews/<str:column_name>/',review.getAllReviews, name='get_all_reviews'),
 
     path('services/', service.getAllServices, name='get_all_services'),
+    path('services/upload-config/', service.upload_service_config, name='upload_service_config'),
     path('services/<str:column_name>/<int:column_value>/',
          service.getAllServices, name='get_all_services'),
 

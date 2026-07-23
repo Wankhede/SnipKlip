@@ -17,4 +17,4 @@ fi
 python scripts/init_db.py --settings="$DJANGO_SETTINGS_MODULE"
 python manage.py migrate --noinput --settings="$DJANGO_SETTINGS_MODULE"
 python manage.py check --settings="$DJANGO_SETTINGS_MODULE"
-python manage.py runserver 127.0.0.1:8000 --settings="$DJANGO_SETTINGS_MODULE"
+python manage.py runserver 127.0.0.1:8082 --settings="$DJANGO_SETTINGS_MODULE"

@@ -21,7 +21,7 @@ CONTACT_NUMBER = get_env("CONTACT_NUMBER", get_env("DEFAULT_MOBILE_NUMBER", ""))
 CONTACT_RECIPIENTS = _split_csv(
     get_env(
         "CONTACT_RECIPIENTS",
-        "spwankhede007@gmail.com,admin@snipklip.in,support@snipklip.in",
+        "admin@snipklip.in,support@snipklip.in",
     )
 )
 

@@ -227,7 +227,7 @@ CONTACT_RECIPIENTS = brand.CONTACT_RECIPIENTS
 SOCIAL_LINKS = brand.SOCIAL_LINKS
 LOGO = brand.LOGO
 BROCHURE_LINK = brand.BROCHURE_LINK
-FRONTEND_LINK = get_env('FRONTEND_LINK', 'http://localhost:8081')
+FRONTEND_LINK = get_env('FRONTEND_LINK', 'http://localhost:8083')
 
 LOGGING = {
     'version': 1,  # Required
