@@ -4,10 +4,10 @@ Single-click local development for the **two-repo** SnipKlip stack.
 
 | Service | Stack | Reserved port | URL |
 |---------|--------|---------------|-----|
-| **Backend** | Django 3.2 + DRF + SQLite | **8082** | http://127.0.0.1:8082 |
+| **Backend** | Django 3.2 + DRF + SQLite | **8082** | http://localhost:8082 |
 | **Frontend** | Next.js 12 + NextAuth | **8083** | http://localhost:8083 |
 
-> These ports are reserved across CORS, env templates, e2e, and launch scripts. Do not swap them without updating both repos.
+> Always open **`http://localhost:...`** in the browser (not `127.0.0.1`). The launcher binds `0.0.0.0` and reclaims ports 8082/8083 if another process is holding them.
 
 ---
 
@@ -106,13 +106,14 @@ chmod +x ./run-local.sh
 ### What the launcher does
 
 1. Checks Python + Node/npm on `PATH` (prints download links if missing).
-2. Creates `.venv` if missing and installs `requirements.txt`.
-3. Creates `.env` / `.env.local` from examples when missing (with localhost ports).
-4. Runs migrations / DB init.
-5. Installs frontend `node_modules` when missing (`npm install --legacy-peer-deps`).
-6. Starts Django on **8082** and Next.js on **8083**.
-7. Waits until `/api/schema/` and `/login` return HTTP 200.
-8. Supervises both processes until you press **Ctrl+C**.
+2. Creates `.venv` if missing and **always installs** `requirements.txt`.
+3. Creates `.env` / `.env.local` from examples when missing (localhost URLs).
+4. **Reclaims ports 8082/8083** if another process is using them (kills the occupant tree, retries until free).
+5. Runs migrations / DB init.
+6. **Always runs** `npm install --legacy-peer-deps` for the frontend.
+7. Starts Django on **8082** (`0.0.0.0` bind) and Next.js on **8083** (`localhost` bind — required for NextAuth).
+8. Waits until `/api/schema/` and `/login` return HTTP 200 on **http://localhost:...**.
+9. On Unix, supervises both processes until you press **Ctrl+C**. On Windows, leave the workers running and use `.\run-local.bat stop` to shut down.
 
 Logs:
 
@@ -127,7 +128,7 @@ With the launcher running:
 
 | Check | Expected |
 |-------|----------|
-| http://127.0.0.1:8082/api/schema/ | 200 |
+| http://localhost:8082/api/schema/ | 200 |
 | http://localhost:8083/login | 200 |
 | http://localhost:8083/register | page loads |
 
@@ -150,7 +151,7 @@ DB_NAME=db.sqlite3
 ### Frontend `.env.local` (from `.env.example`)
 
 ```dotenv
-NEXT_PUBLIC_BACKEND_URL=http://127.0.0.1:8082/
+NEXT_PUBLIC_BACKEND_URL=http://localhost:8082/
 NEXT_PUBLIC_FRONTEND_URL=http://localhost:8083/
 NEXTAUTH_URL=http://localhost:8083/
 ```

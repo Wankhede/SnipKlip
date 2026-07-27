@@ -129,7 +129,7 @@ def ensure_frontend_env(frontend: Path) -> None:
 
     text = env_file.read_text(encoding="utf-8")
     replacements = {
-        "NEXT_PUBLIC_BACKEND_URL=": f"NEXT_PUBLIC_BACKEND_URL=http://127.0.0.1:{BACKEND_PORT}/",
+        "NEXT_PUBLIC_BACKEND_URL=": f"NEXT_PUBLIC_BACKEND_URL=http://localhost:{BACKEND_PORT}/",
         "NEXT_PUBLIC_FRONTEND_URL=": f"NEXT_PUBLIC_FRONTEND_URL=http://localhost:{FRONTEND_PORT}/",
         "NEXTAUTH_URL=": f"NEXTAUTH_URL=http://localhost:{FRONTEND_PORT}/",
         "PORT=": f"PORT={FRONTEND_PORT}",
