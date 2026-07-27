@@ -177,6 +177,59 @@ function Wait-Http([string]$Name, [string]$Url, [int]$Expected = 200, [int]$Atte
   return $false
 }
 
+function Find-LocalNode18 {
+  $roots = @(
+    (Join-Path $RunDir 'node18'),
+    (Join-Path (Split-Path $BackendDir -Parent) '.run\node18')
+  )
+  if ($env:NODE18_BIN -and (Test-Path -LiteralPath $env:NODE18_BIN)) {
+    return (Resolve-Path -LiteralPath $env:NODE18_BIN).Path
+  }
+  foreach ($root in $roots) {
+    if (-not (Test-Path -LiteralPath $root)) { continue }
+    $bin = Get-ChildItem -LiteralPath $root -Recurse -Filter 'node.exe' -ErrorAction SilentlyContinue |
+      Where-Object { $_.FullName -match 'node-v18' } |
+      Select-Object -First 1
+    if ($bin) { return $bin.FullName }
+  }
+  return $null
+}
+
+function Ensure-Node18([hashtable]$Tools) {
+  if ($Tools.NodeMajor -eq 18) { return $Tools.Node }
+  $existing = Find-LocalNode18
+  if ($existing) {
+    Write-Ok "Using portable Node 18: $existing"
+    return $existing
+  }
+
+  $arch = if ([Environment]::Is64BitOperatingSystem) {
+    if ($env:PROCESSOR_ARCHITECTURE -eq 'ARM64') { 'arm64' } else { 'x64' }
+  } else { 'x86' }
+  $name = "node-v18.20.8-win-${arch}"
+  $zip = "$name.zip"
+  $url = "https://nodejs.org/dist/v18.20.8/$zip"
+  $dest = Join-Path $RunDir 'node18'
+  New-Item -ItemType Directory -Force -Path $dest | Out-Null
+  $zipPath = Join-Path $dest $zip
+  Write-Step "Downloading portable Node 18.20.8 ($arch) — Next.js 12 needs it"
+  try {
+    Invoke-WebRequest -Uri $url -OutFile $zipPath -UseBasicParsing
+    Expand-Archive -LiteralPath $zipPath -DestinationPath $dest -Force
+    Remove-Item -LiteralPath $zipPath -Force -ErrorAction SilentlyContinue
+  } catch {
+    Write-Warn "Portable Node 18 download failed: $_ — falling back to host Node $($Tools.Node)"
+    return $Tools.Node
+  }
+  $found = Find-LocalNode18
+  if (-not $found) {
+    Write-Warn 'Portable Node 18 extract finished but node.exe not found — using host Node.'
+    return $Tools.Node
+  }
+  Write-Ok "Installed portable Node 18: $found"
+  return $found
+}
+
 function Assert-Prereqs {
   $py = Resolve-PythonLauncher
   if (-not $py) {
@@ -204,7 +257,7 @@ Then reopen VS Code / PowerShell.
 
   $nodeMajor = [int]((& $nodePath -p "process.versions.node.split('.')[0]").Trim())
   if ($nodeMajor -ne 18) {
-    Write-Warn "Host Node is $nodeVer — Next.js 12 prefers Node 18. Will prefer npx node@18 when launching."
+    Write-Warn "Host Node is $nodeVer — Next.js 12 prefers Node 18. Launcher will use a portable Node 18 binary."
   }
   return @{
     Py = $py
@@ -447,26 +500,14 @@ function Start-FrontendProcess([string]$FrontendDir, [hashtable]$Tools) {
 
   Write-Step "Starting Next.js → http://${PublicHost}:${FrontendPort}"
 
-  # Prefer npm run dev (uses package.json) — most reliable on Windows.
-  # Force hostname localhost so NextAuth SSR fetch to localhost works.
-  $npm = $Tools.Npm
-  $node = $Tools.Node
   $nextCli = Join-Path $FrontendDir 'node_modules\next\dist\bin\next'
-
-  if ($Tools.NodeMajor -eq 18 -and (Test-Path -LiteralPath $nextCli)) {
-    $file = $node
-    $args = @($nextCli, 'dev', '-p', "$FrontendPort", '-H', 'localhost')
-  } elseif ($Tools.NodeMajor -eq 18) {
-    # Fall back to npm script
-    $file = $npm
-    $args = @('run', 'dev', '--', '-H', 'localhost')
-  } else {
-    # Host Node is not 18 — run Next under portable Node 18
-    $npx = (Get-Command 'npx.cmd' -ErrorAction SilentlyContinue)
-    if (-not $npx) { Die 'npx.cmd not found (install Node 18 LTS).' }
-    $file = $npx.Source
-    $args = @('--yes', '--package=node@18.20.8', 'node', $nextCli, 'dev', '-p', "$FrontendPort", '-H', 'localhost')
+  if (-not (Test-Path -LiteralPath $nextCli)) {
+    Die "next CLI missing at $nextCli — run npm install --legacy-peer-deps in the frontend repo."
   }
+
+  $nodeBin = Ensure-Node18 $Tools
+  $file = $nodeBin
+  $args = @($nextCli, 'dev', '-p', "$FrontendPort", '-H', 'localhost')
 
   $proc = Start-LoggedCmd -FilePath $file `
     -ArgumentList $args `

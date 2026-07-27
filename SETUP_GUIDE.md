@@ -40,7 +40,7 @@ Same command on **Windows, macOS, and Linux** — in Cursor, VS Code, PowerShell
 **Windows tips**
 - During Python install, enable **Add python.exe to PATH**.
 - Install Git for Windows so `git` works in PowerShell / VS Code.
-- Prefer **Node 18 LTS**. If you only have Node 20+, the launcher falls back to `npx node@18` automatically.
+- Prefer **Node 18 LTS**. If you only have Node 20+/26, the launcher downloads a portable Node 18 under `.run/node18/` (no `npx` / global npm cache needed).
 
 ---
 
@@ -179,7 +179,8 @@ Secrets (`NEXTAUTH_SECRET`, `JWT_SECRET`) are generated on first create.
 | `TCP connection failed` / login 500 | Use **http://localhost:8083** (not 127.0.0.1). Pull latest launcher — it waits for TCP LISTEN and avoids a Windows stdout/stderr redirect crash. |
 | Says next/react not installed but `node_modules` exists | Pull latest launcher — it verifies with `require('next')` instead of Unix bin checks. Then `cd ..\snipklip-frontend && npm install --legacy-peer-deps`. |
 | `backports.zoneinfo` build error | Use Python 3.9+ (marker skips that package) |
-| Next.js odd crashes on Node 20+ | Install Node 18, or let the launcher use `npx node@18` |
+| Next.js odd crashes / `npx` EACCES on Node 20+ | Install Node 18 LTS, or let the launcher use portable `.run/node18`. If you see `Your cache folder contains root-owned files`, run: `sudo chown -R $(whoami) ~/.npm` |
+| `numpy` / pip build fails on Python 3.12 | Prefer Python **3.10 or 3.11**. Launcher continues if Django is already importable. |
 | CORS / auth loop | Confirm frontend is on **8083** and backend env `FRONTEND_LINK` matches |
 
 ---

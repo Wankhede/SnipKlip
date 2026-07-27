@@ -258,20 +258,78 @@ start_backend() {
   ok "Backend pid $(cat "$PID_DIR/backend.pid") → http://${PUBLIC_HOST}:${BACKEND_PORT}"
 }
 
+# Prefer a project-local Node 18 binary so Next.js 12 works even when host Node is 20+/26
+# and ~/.npm is broken (root-owned cache / EACCES on npx).
+find_local_node18() {
+  local candidate
+  for candidate in \
+    "${NODE18_BIN:-}" \
+    "$LOG_DIR/node18"/node-v18*/bin/node \
+    "$BACKEND_DIR/../.run/node18"/node-v18*/bin/node \
+    "$HOME/.run/node18"/node-v18*/bin/node
+  do
+    [[ -n "$candidate" && -x "$candidate" ]] || continue
+    echo "$candidate"
+    return 0
+  done
+  return 1
+}
+
+ensure_node18() {
+  local host_major found os arch tarball url dest
+  host_major="$(node -p "process.versions.node.split('.')[0]" 2>/dev/null || echo 0)"
+  if [[ "$host_major" == "18" ]]; then
+    command -v node
+    return 0
+  fi
+  if found="$(find_local_node18)"; then
+    ok "Using portable Node 18: $found" >&2
+    echo "$found"
+    return 0
+  fi
+
+  case "$(uname -s)" in
+    Darwin) os=darwin ;;
+    Linux) os=linux ;;
+    *) warn "Cannot auto-download Node 18 on $(uname -s); install Node 18 LTS."; command -v node; return 0 ;;
+  esac
+  case "$(uname -m)" in
+    arm64|aarch64) arch=arm64 ;;
+    x86_64|amd64) arch=x64 ;;
+    *) warn "Unsupported arch $(uname -m) for portable Node 18."; command -v node; return 0 ;;
+  esac
+
+  dest="$LOG_DIR/node18"
+  mkdir -p "$dest"
+  tarball="node-v18.20.8-${os}-${arch}.tar.gz"
+  url="https://nodejs.org/dist/v18.20.8/${tarball}"
+  step "Downloading portable Node 18.20.8 (${os}-${arch}) — Next.js 12 needs it"
+  if command -v curl >/dev/null 2>&1; then
+    curl -fsSL "$url" -o "$dest/$tarball"
+  else
+    wget -qO "$dest/$tarball" "$url"
+  fi
+  tar -xzf "$dest/$tarball" -C "$dest"
+  rm -f "$dest/$tarball"
+  found="$(find_local_node18)" || die "Portable Node 18 download finished but binary not found under $dest"
+  ok "Installed portable Node 18: $found" >&2
+  echo "$found"
+}
+
 start_frontend() {
-  local frontend_dir="$1" node_major
+  local frontend_dir="$1" node_bin
   claim_port "$FRONTEND_PORT"
   sync_frontend_env "$frontend_dir"
   : >"$LOG_DIR/frontend.log"
-  node_major="$(node -p "process.versions.node.split('.')[0]" 2>/dev/null || echo 0)"
+  node_bin="$(ensure_node18)"
   (
     cd "$frontend_dir"
-    if [[ "$node_major" == "18" ]]; then
-      exec node node_modules/next/dist/bin/next dev -p "$FRONTEND_PORT" -H localhost
+    if [[ "$("$node_bin" -p "process.versions.node.split('.')[0]")" != "18" ]]; then
+      warn "Host Node is $($node_bin -v); Next.js 12 may fail. Install Node 18 or fix ~/.npm then re-run."
     else
-      warn "Host Node is $(node -v); launching Next with portable Node 18 via npx."
-      exec npx --yes --package=node@18.20.8 node node_modules/next/dist/bin/next dev -p "$FRONTEND_PORT" -H localhost
+      ok "Using Node $($node_bin -v) for Next.js." >&2
     fi
+    exec "$node_bin" node_modules/next/dist/bin/next dev -p "$FRONTEND_PORT" -H localhost
   ) >>"$LOG_DIR/frontend.log" 2>&1 &
   echo $! >"$PID_DIR/frontend.pid"
   ok "Frontend pid $(cat "$PID_DIR/frontend.pid") → http://${PUBLIC_HOST}:${FRONTEND_PORT}"
