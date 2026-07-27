@@ -30,7 +30,13 @@ Our mission is to transform the beauty and wellness industry through intuitive t
 node run-local.js
 ```
 
-That is the single entry point. It starts **backend + frontend**, installs packages, reclaiming ports **8082 / 8083**, and opens URLs as **http://localhost:...** (not `127.0.0.1`).
+That is the single entry point. It starts **backend + frontend** together.
+
+- **Already set up?** If `.venv` and frontend `node_modules` are healthy, it **skips installs** and only starts the servers.
+- **First run / broken deps?** It creates the venv, runs `pip install` / `npm install`, then starts both.
+- Reclaims ports **8082 / 8083**. Open the app at **http://localhost:8083** (browser).
+- Sets frontend `NEXT_PUBLIC_BACKEND_URL` to **http://127.0.0.1:8082/** so NextAuth login works on Windows/macOS (avoids IPv6 `::1` vs Django IPv4).
+- Force a full reinstall anytime: `FORCE_INSTALL=1 node run-local.js` (Windows PowerShell: `$env:FORCE_INSTALL=1; node run-local.js`).
 
 | How | What to run |
 |-----|-------------|

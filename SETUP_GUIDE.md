@@ -113,14 +113,16 @@ Optional OS-native shortcuts (same behavior):
 ### What the launcher does
 
 1. Checks Python + Node/npm on `PATH` (prints download links if missing).
-2. Creates `.venv` if missing and **always installs** `requirements.txt`.
+2. Creates `.venv` if missing. **Installs** `requirements.txt` only when packages are missing/broken (or `FORCE_INSTALL=1`).
 3. Creates `.env` / `.env.local` from examples when missing (localhost URLs).
 4. **Reclaims ports 8082/8083** if another process is using them (kills the occupant tree, retries until free).
 5. Runs migrations / DB init.
-6. **Always runs** `npm install --legacy-peer-deps` for the frontend.
+6. **Installs** frontend packages (`npm install --legacy-peer-deps`) only when `next` / `react` are missing — otherwise skips straight to start.
 7. Starts Django on **8082** (`0.0.0.0` bind) and Next.js on **8083** (`localhost` bind — required for NextAuth).
 8. Waits until `/api/schema/` and `/login` return HTTP 200 on **http://localhost:...**.
 9. On Unix, supervises both processes until you press **Ctrl+C**. On Windows, leave the workers running and use `.\run-local.bat stop` to shut down.
+
+**Everyday use:** once deps are installed, `node run-local.js` just starts backend + frontend. To force reinstall: `FORCE_INSTALL=1 node run-local.js`.
 
 Logs:
 
@@ -166,7 +168,7 @@ DB_NAME=db.sqlite3
 ### Frontend `.env.local` (from `.env.example`)
 
 ```dotenv
-NEXT_PUBLIC_BACKEND_URL=http://localhost:8082/
+NEXT_PUBLIC_BACKEND_URL=http://127.0.0.1:8082/
 NEXT_PUBLIC_FRONTEND_URL=http://localhost:8083/
 NEXTAUTH_URL=http://localhost:8083/
 ```
@@ -184,7 +186,7 @@ Secrets (`NEXTAUTH_SECRET`, `JWT_SECRET`) are generated on first create.
 | `Frontend repo not found` | Clone sibling `snipklip-frontend` or set `FRONTEND_DIR` |
 | Port already in use | Launcher reclaim should free it; or `.\run-local.bat stop` |
 | `ExecutionPolicy` blocked | `powershell -ExecutionPolicy Bypass -File .\run-local.ps1` |
-| `TCP connection failed` / login 500 | Use **http://localhost:8083** (not 127.0.0.1). Pull latest launcher — it waits for TCP LISTEN and avoids a Windows stdout/stderr redirect crash. |
+| `TCP connection failed` / login 500 | Use **http://localhost:8083** (not 127.0.0.1) in the browser. Pull latest launcher — it sets `NEXT_PUBLIC_BACKEND_URL=http://127.0.0.1:8082/` so NextAuth does not hit IPv6 `::1` while Django is IPv4-only. |
 | Says next/react not installed but `node_modules` exists | Pull latest launcher — it verifies with `require('next')` instead of Unix bin checks. Then `cd ..\snipklip-frontend && npm install --legacy-peer-deps`. |
 | `backports.zoneinfo` build error | Use Python 3.9+ (marker skips that package) |
 | Next.js odd crashes / `npx` EACCES on Node 20+ | Install Node 18 LTS, or let the launcher use portable `.run/node18`. If you see `Your cache folder contains root-owned files`, run: `sudo chown -R $(whoami) ~/.npm` |

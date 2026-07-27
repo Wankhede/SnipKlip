@@ -3,7 +3,9 @@
 # Backend  → http://localhost:8082
 # Frontend → http://localhost:8083
 #
-# On every start: install pkgs, reclaim reserved ports, bind 0.0.0.0, advertise localhost.
+# Smart start: if .venv + node_modules are already healthy, skip installs and just
+# start backend + frontend. Set FORCE_INSTALL=1 to reinstall packages anyway.
+# Also: reclaim reserved ports, bind 0.0.0.0, advertise localhost.
 set -euo pipefail
 
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
@@ -142,6 +144,17 @@ assert_prereqs() {
   ok "Python $($pybin --version 2>&1) | Node $(node -v) | npm $(npm -v)"
 }
 
+python_packages_ready() {
+  local py="$1"
+  "$py" -c "import django, rest_framework, corsheaders" >/dev/null 2>&1
+}
+
+frontend_packages_ready() {
+  local frontend_dir="$1"
+  [[ -e "$frontend_dir/node_modules/next/dist/bin/next" ]] || return 1
+  (cd "$frontend_dir" && node -e "require.resolve('next'); require.resolve('react'); require.resolve('react-dom')" >/dev/null 2>&1)
+}
+
 ensure_venv_and_packages() {
   local py pybin
   if py="$(resolve_venv_python)"; then
@@ -158,6 +171,14 @@ ensure_venv_and_packages() {
       die "Failed to create .venv"
     fi
   fi
+
+  # Skip pip when deps are already importable (fast path for everyday start).
+  if [[ "${FORCE_INSTALL:-0}" != "1" ]] && python_packages_ready "$py"; then
+    ok "Python packages already installed — skipping pip install"
+    printf '%s\n' "$py"
+    return 0
+  fi
+
   step "Installing Python packages"
   # All chatter must go to stderr — stdout is captured as the python path.
   if ! "$py" -m pip install --upgrade "pip<25" "setuptools<70" wheel >&2; then
@@ -176,13 +197,18 @@ ensure_venv_and_packages() {
 
 ensure_frontend_packages() {
   local frontend_dir="$1"
+  if [[ "${FORCE_INSTALL:-0}" != "1" ]] && frontend_packages_ready "$frontend_dir"; then
+    ok "Frontend packages already installed — skipping npm install"
+    return 0
+  fi
+
   step "Installing frontend packages (npm install --legacy-peer-deps)"
   if [[ -d "$frontend_dir/node_modules" && ! -e "$frontend_dir/node_modules/next/dist/bin/next" ]]; then
     warn "Broken node_modules — removing"
     rm -rf "$frontend_dir/node_modules"
   fi
   (cd "$frontend_dir" && npm install --legacy-peer-deps)
-  [[ -e "$frontend_dir/node_modules/next/dist/bin/next" ]] || die "Next.js binary missing after npm install"
+  frontend_packages_ready "$frontend_dir" || die "Next.js / react missing after npm install"
   ok "Frontend packages installed"
 }
 
@@ -223,7 +249,9 @@ sync_frontend_env() {
       "$example" > "$env_file"
     ok "Created frontend .env.local with local secrets"
   fi
-  local backend_url="http://${PUBLIC_HOST}:${BACKEND_PORT}/"
+  # Use 127.0.0.1 for backend API: Node resolves "localhost" → ::1, but Django
+  # runserver binds IPv4 only, which breaks NextAuth server-side login.
+  local backend_url="http://127.0.0.1:${BACKEND_PORT}/"
   local frontend_url="http://${PUBLIC_HOST}:${FRONTEND_PORT}/"
   tmp="$(mktemp)"
   sed \
@@ -231,6 +259,7 @@ sync_frontend_env() {
     -e "s|^NEXT_PUBLIC_FRONTEND_URL=.*|NEXT_PUBLIC_FRONTEND_URL=${frontend_url}|" \
     -e "s|^NEXTAUTH_URL=.*|NEXTAUTH_URL=${frontend_url}|" \
     "$env_file" > "$tmp"
+  grep -q '^NEXT_PUBLIC_BACKEND_URL=' "$tmp" || printf '\nNEXT_PUBLIC_BACKEND_URL=%s\n' "$backend_url" >> "$tmp"
   mv "$tmp" "$env_file"
   ok "Frontend env → backend ${backend_url} | self ${frontend_url}"
 }
@@ -348,6 +377,9 @@ Usage: $(basename "$0") [start|stop|status|restart]
 Ports (localhost):
   Backend  http://${PUBLIC_HOST}:${BACKEND_PORT}
   Frontend http://${PUBLIC_HOST}:${FRONTEND_PORT}
+
+Installs only when needed (missing/broken .venv or node_modules).
+Force reinstall: FORCE_INSTALL=1 $(basename "$0")
 EOF
     exit 0
     ;;
@@ -371,7 +403,7 @@ stop_services
 trap 'echo; echo "Stopping..."; stop_services; exit 0' INT TERM
 
 start_backend "$VENV_PYTHON"
-wait_for_http "Django schema" "http://${PUBLIC_HOST}:${BACKEND_PORT}/api/schema/" "200" 120 \
+wait_for_http "Django schema" "http://127.0.0.1:${BACKEND_PORT}/api/schema/" "200" 120 \
   || { tail -n 50 "$LOG_DIR/backend.log" >&2 || true; die "Backend unhealthy"; }
 
 start_frontend "$FRONTEND_DIR"

@@ -10,6 +10,11 @@
     - npm.cmd / PATH resolution
     - localhost-only browser URLs (not 127.0.0.1)
 
+  Smart start: skips pip/npm when .venv and node_modules are already healthy.
+  Set FORCE_INSTALL=1 to reinstall packages anyway.
+  Sets NEXT_PUBLIC_BACKEND_URL to http://127.0.0.1:8082/ so NextAuth
+  (Node server-side) does not hit IPv6 ::1 while Django is IPv4-only.
+
   Ports:
     Backend  → http://localhost:8082
     Frontend → http://localhost:8083
@@ -278,8 +283,13 @@ function Get-VenvPython {
   return $null
 }
 
+function Test-PythonPackagesReady([string]$VenvPy) {
+  & $VenvPy -c "import django, rest_framework, corsheaders" 2>$null | Out-Null
+  return ($LASTEXITCODE -eq 0)
+}
+
 function Ensure-VenvAndPackages([hashtable]$Tools) {
-  Write-Step 'Ensuring Python virtualenv + installing requirements'
+  Write-Step 'Checking Python virtualenv + packages'
   $venvPy = Get-VenvPython
   if (-not $venvPy) {
     $venvPath = Join-Path $BackendDir '.venv'
@@ -293,6 +303,13 @@ function Ensure-VenvAndPackages([hashtable]$Tools) {
   $venvScripts = Split-Path $venvPy -Parent
   $env:Path = "$venvScripts;$env:Path"
 
+  $forceInstall = ($env:FORCE_INSTALL -eq '1')
+  if (-not $forceInstall -and (Test-PythonPackagesReady $venvPy)) {
+    Write-Ok "Python packages already installed — skipping pip install ($venvPy)"
+    return $venvPy
+  }
+
+  Write-Step 'Installing Python requirements'
   & $venvPy -m pip install --upgrade "pip<25" "setuptools<70" wheel | Out-Host
   & $venvPy -m pip install --prefer-binary -r (Join-Path $BackendDir 'requirements.txt') | Out-Host
   if ($LASTEXITCODE -ne 0) {
@@ -335,15 +352,15 @@ console.log("READY");
 }
 
 function Ensure-FrontendPackages([string]$FrontendDir, [hashtable]$Tools) {
-  Write-Step 'Checking / installing frontend packages (next, react, …)'
+  Write-Step 'Checking frontend packages (next, react, …)'
 
-  $alreadyOk = Test-FrontendModules $FrontendDir $Tools.Node
-  if ($alreadyOk) {
-    Write-Ok 'next / react / react-dom already resolve — refreshing with npm install anyway'
-  } else {
-    Write-Warn 'Frontend modules not resolvable yet — running npm install'
+  $forceInstall = ($env:FORCE_INSTALL -eq '1')
+  if (-not $forceInstall -and (Test-FrontendModules $FrontendDir $Tools.Node)) {
+    Write-Ok 'Frontend packages already installed — skipping npm install'
+    return
   }
 
+  Write-Warn 'Frontend modules missing or FORCE_INSTALL=1 — running npm install'
   Push-Location $FrontendDir
   try {
     # Use cmd.exe so npm.cmd lifecycle scripts work reliably on Windows
@@ -420,7 +437,9 @@ function Sync-FrontendEnv([string]$FrontendDir) {
     Write-Ok 'Created .env.local with local secrets'
   }
 
-  $backendUrl  = "http://${PublicHost}:${BackendPort}/"
+  # Use 127.0.0.1 for backend API: Node resolves "localhost" → ::1 on some hosts,
+  # but Django runserver binds IPv4 only, which breaks NextAuth server-side login.
+  $backendUrl  = "http://127.0.0.1:${BackendPort}/"
   $frontendUrl = "http://${PublicHost}:${FrontendPort}/"
   $map = [ordered]@{
     'NEXT_PUBLIC_BACKEND_URL'  = $backendUrl
@@ -586,9 +605,9 @@ try {
     if (Test-Path -LiteralPath $BackendLog) { Get-Content -LiteralPath $BackendLog -Tail 60 }
     Die "Backend never opened TCP port $BackendPort"
   }
-  if (-not (Wait-Http 'Django schema' "http://${PublicHost}:${BackendPort}/api/schema/" 200 120)) {
+  if (-not (Wait-Http 'Django schema' "http://127.0.0.1:${BackendPort}/api/schema/" 200 120)) {
     if (Test-Path -LiteralPath $BackendLog) { Get-Content -LiteralPath $BackendLog -Tail 60 }
-    Die "Backend HTTP health-check failed on http://${PublicHost}:${BackendPort}"
+    Die "Backend HTTP health-check failed on http://127.0.0.1:${BackendPort}"
   }
 
   Start-FrontendProcess $FrontendDir $Tools
