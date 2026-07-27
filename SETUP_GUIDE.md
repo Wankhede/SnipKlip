@@ -1,13 +1,31 @@
 # SnipKlip — Local Setup Guide (Windows / macOS / Linux)
 
-Single-click local development for the **two-repo** SnipKlip stack.
+Single entry local development for the **two-repo** SnipKlip stack.
 
 | Service | Stack | Reserved port | URL |
 |---------|--------|---------------|-----|
 | **Backend** | Django 3.2 + DRF + SQLite | **8082** | http://localhost:8082 |
 | **Frontend** | Next.js 12 + NextAuth | **8083** | http://localhost:8083 |
 
-> Always open **`http://localhost:...`** in the browser (not `127.0.0.1`). The launcher binds `0.0.0.0` and reclaims ports 8082/8083 if another process is holding them.
+## The one thing to run
+
+```bash
+node run-local.js
+```
+
+Same command on **Windows, macOS, and Linux** — in Cursor, VS Code, PowerShell, cmd, or Terminal.
+
+| Where | Action |
+|-------|--------|
+| **Cursor / VS Code** | `Terminal` → `Run Task…` → **SnipKlip: Start** · or **Cmd/Ctrl+Shift+B** (default build task) |
+| **Terminal** | `node run-local.js` |
+| Stop | `node run-local.js stop` |
+| Status | `node run-local.js status` |
+| Restart | `node run-local.js restart` |
+
+`run-local.js` picks the OS launcher for you (`run-local.bat` / `run-local.ps1` on Windows, `run-local.sh` on macOS/Linux). You do not need to remember which script matches your OS.
+
+> Always open **`http://localhost:...`** in the browser (not `127.0.0.1`). The launcher reclaims ports 8082/8083 if another process is holding them.
 
 ---
 
@@ -70,37 +88,26 @@ export FRONTEND_DIR=/path/to/snipklip-frontend
 
 ---
 
-## 3. Single-click start
+## 3. Start (one command)
 
-### Windows
+From the **backend repo** root (`SnipKlip/`):
 
-Double-click **`run-local.bat`**, or in PowerShell / VS Code terminal:
+```bash
+node run-local.js
+```
+
+**Cursor / VS Code:** open this repo (or the parent folder that contains `run-local.js`), then **Run Task → SnipKlip: Start**.
+
+Optional OS-native shortcuts (same behavior):
 
 ```powershell
+# Windows only
 .\run-local.bat
-# or
-powershell -ExecutionPolicy Bypass -File .\run-local.ps1
 ```
-
-Other commands:
-
-```powershell
-.\run-local.bat stop
-.\run-local.bat status
-.\run-local.bat restart
-```
-
-### macOS / Linux
 
 ```bash
-chmod +x ./run-local.sh
+# macOS / Linux only
 ./run-local.sh
-```
-
-```bash
-./run-local.sh stop
-./run-local.sh status
-./run-local.sh restart
 ```
 
 ### What the launcher does

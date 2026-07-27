@@ -24,16 +24,25 @@ Our mission is to transform the beauty and wellness industry through intuitive t
 
 # 🛠️ Project Setup (local)
 
-**Windows / macOS / Linux single-click:** see **[SETUP_GUIDE.md](./SETUP_GUIDE.md)**.
-
-Reserved ports: **Backend :8082** · **Frontend :8083**
+**One command on Windows, macOS, and Linux** (Cursor, VS Code, or any terminal):
 
 ```bash
-# Clone backend + frontend as siblings, then:
-./run-local.sh          # macOS / Linux
-# or
-.\run-local.bat         # Windows
+node run-local.js
 ```
+
+That is the single entry point. It starts **backend + frontend**, installs packages, reclaiming ports **8082 / 8083**, and opens URLs as **http://localhost:...** (not `127.0.0.1`).
+
+| How | What to run |
+|-----|-------------|
+| **Cursor / VS Code** | `Terminal` → `Run Task…` → **SnipKlip: Start** (also default build: **Cmd/Ctrl+Shift+B**) |
+| **Any terminal** | `node run-local.js` |
+| Stop / status / restart | `node run-local.js stop` · `status` · `restart` |
+
+Full clone layout, prerequisites, and troubleshooting: **[SETUP_GUIDE.md](./SETUP_GUIDE.md)**.
+
+> Under the hood, `run-local.js` calls `run-local.bat` (Windows) or `run-local.sh` (macOS/Linux). You only need the Node command (or the IDE task).
+
+Reserved ports: **Backend :8082** · **Frontend :8083**
 
 Legacy Ubuntu server notes remain below for production-style hosts.
 
