@@ -183,20 +183,21 @@ def login(request):
                 user_group = "Admin"
                 subscription_name = 'Premium'
             else:
-                user_group = user.groups.first().name
+                user_group = user.groups.first().name if user.groups.exists() else "Unknown"
                 salon_id, selected_branch_id = get_user_details(user.id)
-                if selected_branch_id is None:
-                    subscription_name = "NULL"
-                else:
+                salon = None
+                subscription_name = "NULL"
+                try:
                     if user_group == "Manager":
                         manager_of_branch = Branch.objects.get(manager=user)
                         salon = manager_of_branch.salon
                         selected_branch_id = manager_of_branch.id
                         salon_id = salon.id
                     elif user_group == "Staff":
-                        employee = Employee.objects.get(user=user,status="Active")
+                        employee = Employee.objects.get(user=user, status="Active")
                         selected_branch_id = employee.branch.id
                         salon_id = employee.branch.salon.id
+                        salon = employee.branch.salon
                     elif user_group == "Salon":
                         salon = SalonDetails.objects.get(user=user)
                         first_branch = Branch.objects.filter(salon=salon).first()
@@ -206,8 +207,33 @@ def login(request):
                         salon = SalonDetails.objects.get(user=user)
                         selected_branch_id = Branch.objects.filter(salon=salon).first().id
                         salon_id = salon.id
+                    elif user_group == "Customer":
+                        customer = Customer.objects.filter(user=user).first()
+                        bcm = (
+                            BranchCustomerMobile.objects.filter(customer_user=customer)
+                            .select_related("branch__salon")
+                            .first()
+                            if customer
+                            else None
+                        )
+                        if bcm and bcm.branch_id:
+                            selected_branch_id = bcm.branch_id
+                            salon = bcm.branch.salon
+                            salon_id = salon.id if salon else -1
+                        else:
+                            salon_id = -1
+                            selected_branch_id = -1
                     else:
-                        pass
+                        # Unknown role: keep resolved salon/branch if any, never crash
+                        if salon_id:
+                            salon = SalonDetails.objects.filter(id=salon_id).first()
+                except Exception:
+                    salon = None
+                    salon_id = salon_id if salon_id not in (None,) else -1
+                    selected_branch_id = selected_branch_id if selected_branch_id not in (None,) else -1
+                    subscription_name = "NULL"
+
+                if salon is not None:
                     current_datetime = timezone.now()
                     active_subscription = (
                         Subscription.objects.filter(
@@ -223,6 +249,8 @@ def login(request):
                         if active_subscription
                         else "NULL"
                     )
+                elif selected_branch_id is None:
+                    subscription_name = "NULL"
             response = Response({
                 "data": {
                     'access_token': access_token,

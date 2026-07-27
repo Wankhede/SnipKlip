@@ -46,7 +46,7 @@ def getSubscriptionType(request):
 
 @api_view(['POST'])
 def create_payment(request):
-    amount = int(request.data.get('amount'))
+    raw_amount = request.data.get('amount')
     subscription_type = request.data.get('subscriptionType')
     user_id = request.data.get('user_id')
     branch_id = request.data.get('branch_id')
@@ -54,15 +54,20 @@ def create_payment(request):
     name_of_subscription = request.data.get('subscriptionName')
     current_date_time = datetime.datetime.now()
     start_date = current_date_time.strftime('%Y-%m-%d %H:%M:%S')
+    if raw_amount in (None, ''):
+        return Response({'message': APIMessages.AMOUNT_NOT_PROVIDED.value,'status':BAD_REQUEST_STATUS})
+    try:
+        amount = int(raw_amount)
+    except (TypeError, ValueError):
+        return Response({'message': APIMessages.AMOUNT_NOT_PROVIDED.value,'status':BAD_REQUEST_STATUS})
+    if amount <= 0:
+        return Response({'message': APIMessages.AMOUNT_NOT_PROVIDED.value,'status':BAD_REQUEST_STATUS})
     try:
         user = User.objects.get(id=user_id)
         salon = SalonDetails.objects.get(id=salon_id)
     except Exception:
         return Response({'message': APIMessages.USER_OR_BRANCH_NOT_EXISTS.value,'status':BAD_REQUEST_STATUS})
-    
-    if amount is None:
-        return Response({'message': APIMessages.AMOUNT_NOT_PROVIDED.value,'status':BAD_REQUEST_STATUS})
-    
+
     check_subscription = Subscription.objects.filter(user=user,paid=True)
     check_subscription_time = check_subscription.filter(Q(start_date__lte=start_date) & Q(end_date__gte=start_date))
 
@@ -126,75 +131,67 @@ def create_payment(request):
 
 @api_view(['POST'])
 def payment_callback(request):
-    # Accessing Data
-    data=request.data
-    branch_id = data['branch_id']
-    salon_id = data['salon_id']
-    user_id = data['user_id']
+    # Accessing Data — never KeyError on missing fields (monkey / webhook chaos)
+    data = request.data if hasattr(request, 'data') else {}
+    branch_id = data.get('branch_id') if hasattr(data, 'get') else None
+    salon_id = data.get('salon_id') if hasattr(data, 'get') else None
+    user_id = data.get('user_id') if hasattr(data, 'get') else None
+    razorpay_order_id = data.get('razorpay_order_id') if hasattr(data, 'get') else None
+
+    failure = {
+        'message': APIMessages.PAYMENT_FAILURE.value,
+        'status': FAILED_STATUS_CODE,
+    }
+
+    if not razorpay_order_id:
+        return Response(failure, status=BAD_REQUEST_STATUS)
+
     try:
-        user = User.objects.get(id=user_id)
-        salon = SalonDetails.objects.get(id=salon_id)
-        branch = Branch.objects.get(salon=salon,id=branch_id)
-    except:
-        response_data = {
-                'message': APIMessages.PAYMENT_FAILURE.value,
-                'status':FAILED_STATUS_CODE
-                }
-        
-    # Process the payment callback data here
-    razorpay_order_id = data['razorpay_order_id']
-    
+        if user_id not in (None, '', 'null'):
+            User.objects.get(id=user_id)
+        if salon_id not in (None, '', 'null'):
+            salon = SalonDetails.objects.get(id=salon_id)
+            if branch_id not in (None, '', 'null'):
+                Branch.objects.get(salon=salon, id=branch_id)
+    except Exception:
+        return Response(failure, status=BAD_REQUEST_STATUS)
+
     try:
         url = f'https://api.razorpay.com/v1/orders/{razorpay_order_id}/payments'
         headers = {
             'Content-Type': 'application/json',
         }
-
-        # You should use your Razorpay key and secret here
-        auth=(RAZORPAY_KEY_ID, RAZORPAY_KEY_SECRET)
-
-        response = requests.get(url, headers=headers, auth=auth)
+        auth = (RAZORPAY_KEY_ID, RAZORPAY_KEY_SECRET)
+        response = requests.get(url, headers=headers, auth=auth, timeout=10)
 
         if response.status_code == 200:
-            payments = response.json()['items']
+            payments = response.json().get('items') or []
             for payment in payments:
-                if payment['order_id'] == razorpay_order_id and payment['status'] == 'captured':
+                if payment.get('order_id') == razorpay_order_id and payment.get('status') == 'captured':
                     order = Subscription.objects.get(order_id=razorpay_order_id)
 
-                    #Make Paid is equal to FALSE for User/Salon (Those who have already Purchased/assigned any Subscription)
-                    if Subscription.objects.filter(salon=order.salon,paid=True,user=order.user):
-                        previous_order = Subscription.objects.get(salon=order.salon,paid=True,user=order.user)
-                        previous_order.paid = False
-                        previous_order.save()
-                        
+                    previous = Subscription.objects.filter(
+                        salon=order.salon, paid=True, user=order.user
+                    ).first()
+                    if previous:
+                        previous.paid = False
+                        previous.save()
+
                     order.paid = True
                     order.save()
 
-                    # Return a success response with the processed data
-                    response_data = {
+                    return Response({
                         'message': APIMessages.PAYMENT_DONE.value,
                         'razorpay_order_id': razorpay_order_id,
-                        'status':SUCCESS_STATUS_CODE,
-                        'subscription_name':order.name_of_subscription
-                    }
-                    return Response(response_data)
-                else:
-                    response_data = {
-                        'message': APIMessages.PAYMENT_FAILURE.value,
-                        'status':FAILED_STATUS_CODE
-                        }
-        else:
-            response_data = {
-                'message': APIMessages.PAYMENT_FAILURE.value,
-                'status':FAILED_STATUS_CODE
-                }
-    
-    # Return Payment Failed
+                        'status': SUCCESS_STATUS_CODE,
+                        'subscription_name': order.name_of_subscription,
+                    })
+            return Response(failure, status=BAD_REQUEST_STATUS)
+
+        return Response(failure, status=BAD_REQUEST_STATUS)
+
     except Exception:
-        response_data = {
-        'message': APIMessages.PAYMENT_FAILURE.value,
-        'status':FAILED_STATUS_CODE
-        }
+        return Response(failure, status=BAD_REQUEST_STATUS)
 
 @api_view(['GET'])
 @throttle_classes([SustainedRateThrottle])

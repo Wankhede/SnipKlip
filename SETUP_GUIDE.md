@@ -139,7 +139,15 @@ With the launcher running:
 | http://localhost:8083/login | 200 |
 | http://localhost:8083/register | page loads |
 
-Default seeded admin after e2e wipe / local seed (when used): `admin` / `Admin@123`.
+Default seeded accounts after e2e wipe / local seed:
+
+| Role | Login (email or username) | Password |
+|------|---------------------------|----------|
+| **Admin** | `admin` or `admin@snipklip.local` | `Admin@123` |
+| **Employee (Staff)** | `employee@snipklip.local` | `Employee@123` |
+| **Customer** | `customer@snipklip.local` | `Customer@123` |
+
+Salon id **3**, branch id **1**, Premium subscription.
 
 ---
 

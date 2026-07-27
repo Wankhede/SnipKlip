@@ -187,35 +187,54 @@ def reseed_bootstrap() -> dict:
     info["allowed_paths"] = AllowedPath.objects.count()
     info["subscription_types"] = SubscriptionType.objects.count()
 
+    from django.utils import timezone
+    from datetime import timedelta
+    from backend.models import BranchCustomerMobile, Customer, Employee
+
     admin_group, _ = Group.objects.get_or_create(name="Admin")
+    staff_group, _ = Group.objects.get_or_create(name="Staff")
+    customer_group, _ = Group.objects.get_or_create(name="Customer")
+
+    admin_email = os.getenv("SNIPKLIP_ADMIN_EMAIL", "admin@snipklip.local")
+    admin_password = os.getenv("SNIPKLIP_ADMIN_PASSWORD", "Admin@123")
+    employee_email = os.getenv("SNIPKLIP_EMPLOYEE_EMAIL", "employee@snipklip.local")
+    employee_password = os.getenv("SNIPKLIP_EMPLOYEE_PASSWORD", "Employee@123")
+    customer_email = os.getenv("SNIPKLIP_CUSTOMER_EMAIL", "customer@snipklip.local")
+    customer_password = os.getenv("SNIPKLIP_CUSTOMER_PASSWORD", "Customer@123")
+
     admin, created = User.objects.get_or_create(
         username=os.getenv("SNIPKLIP_ADMIN_USER", "admin"),
         defaults={
-            "email": "admin@snipklip.local",
+            "email": admin_email,
             "is_staff": True,
             "is_superuser": True,
             "is_active": True,
         },
     )
-    password = os.getenv("SNIPKLIP_ADMIN_PASSWORD", "Admin@123")
-    admin.set_password(password)
+    admin.email = admin_email
+    admin.set_password(admin_password)
     admin.is_staff = True
     admin.is_superuser = True
     admin.is_active = True
     admin.save()
     admin.groups.add(admin_group)
-    info["admin"] = {"username": admin.username, "created": created, "id": admin.id}
+    info["admin"] = {
+        "username": admin.username,
+        "email": admin.email,
+        "created": created,
+        "id": admin.id,
+    }
 
     salon, _ = SalonDetails.objects.get_or_create(
         id=int(os.getenv("SNIPKLIP_SALON_ID", "3")),
         defaults={
             "user": admin,
             "name": "ADMIN",
-            "email": "admin@snipklip.local",
+            "email": admin_email,
             "reg_no": "ADMIN-001",
             "contact_no": "9999999999",
             "owner_name": "Admin",
-            "owner_email": "admin@snipklip.local",
+            "owner_email": admin_email,
         },
     )
     # Ensure FK even if row already existed empty
@@ -252,9 +271,6 @@ def reseed_bootstrap() -> dict:
     elif SubscriptionType.objects.exists():
         sub_name = SubscriptionType.objects.first().subscription_type
 
-    from django.utils import timezone
-    from datetime import timedelta
-
     Subscription.objects.filter(salon=salon).delete()
     Subscription.objects.create(
         salon=salon,
@@ -268,8 +284,96 @@ def reseed_bootstrap() -> dict:
         type='YEARLY',
     )
 
+    # Seed Staff employee account for RBAC / monkey login tests
+    employee_user, emp_created = User.objects.get_or_create(
+        username=employee_email,
+        defaults={
+            "email": employee_email,
+            "first_name": "Test",
+            "last_name": "Employee",
+            "name": "Test Employee",
+            "mobile": "9888888888",
+            "is_active": True,
+        },
+    )
+    employee_user.email = employee_email
+    employee_user.first_name = employee_user.first_name or "Test"
+    employee_user.last_name = employee_user.last_name or "Employee"
+    employee_user.name = employee_user.name or "Test Employee"
+    employee_user.mobile = employee_user.mobile or "9888888888"
+    employee_user.is_active = True
+    employee_user.set_password(employee_password)
+    employee_user.save()
+    employee_user.groups.clear()
+    employee_user.groups.add(staff_group)
+    Employee.objects.filter(user=employee_user).delete()
+    Employee.objects.create(
+        user=employee_user,
+        branch=branch,
+        employee_type="Staff",
+        status="Active",
+        base_salary=10000,
+        product_incentive=0,
+        service_incentive=0,
+    )
+    info["employee"] = {
+        "username": employee_user.username,
+        "email": employee_user.email,
+        "created": emp_created,
+        "id": employee_user.id,
+    }
+
+    # Seed Customer account for RBAC / monkey login tests
+    customer_user, cust_created = User.objects.get_or_create(
+        username=customer_email,
+        defaults={
+            "email": customer_email,
+            "first_name": "Test",
+            "last_name": "Customer",
+            "name": "Test Customer",
+            "mobile": "9777777777",
+            "is_active": True,
+        },
+    )
+    customer_user.email = customer_email
+    customer_user.first_name = customer_user.first_name or "Test"
+    customer_user.last_name = customer_user.last_name or "Customer"
+    customer_user.name = customer_user.name or "Test Customer"
+    customer_user.mobile = customer_user.mobile or "9777777777"
+    customer_user.is_active = True
+    customer_user.set_password(customer_password)
+    customer_user.save()
+    customer_user.groups.clear()
+    customer_user.groups.add(customer_group)
+    Customer.objects.filter(user=customer_user).delete()
+    customer = Customer.objects.create(
+        user=customer_user,
+        first_name="Test",
+        last_name="Customer",
+        name="Test Customer",
+        email=customer_email,
+        status="Active",
+    )
+    bcm = BranchCustomerMobile.objects.create(
+        branch=branch,
+        customer_user=customer,
+        mobile="9777777777",
+    )
+    customer.mobile_number.add(bcm)
+    info["customer"] = {
+        "username": customer_user.username,
+        "email": customer_user.email,
+        "created": cust_created,
+        "id": customer_user.id,
+    }
+
     info["salon_id"] = salon.id
     info["branch_id"] = branch.id
+    info["passwords"] = {
+        "admin": admin_password,
+        "employee": employee_password,
+        "customer": customer_password,
+    }
     return info
 
 

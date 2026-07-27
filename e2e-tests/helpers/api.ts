@@ -3,8 +3,12 @@ import {
   ADMIN_PASSWORD,
   ADMIN_USER,
   BACKEND_URL,
+  CUSTOMER_PASSWORD,
+  CUSTOMER_USER,
   DEFAULT_BRANCH_ID,
-  DEFAULT_SALON_ID
+  DEFAULT_SALON_ID,
+  EMPLOYEE_PASSWORD,
+  EMPLOYEE_USER
 } from './env';
 
 export type LoginSession = {
@@ -17,26 +21,38 @@ export type LoginSession = {
   raw: any;
 };
 
-/** Reuse one admin session across tests to avoid BurstRateThrottle 429s on /login/. */
-let cachedSession: LoginSession | null = null;
-let cachedAt = 0;
+export type RoleName = 'admin' | 'employee' | 'customer';
+
+const ROLE_CREDS: Record<RoleName, { username: string; password: string }> = {
+  admin: { username: ADMIN_USER, password: ADMIN_PASSWORD },
+  employee: { username: EMPLOYEE_USER, password: EMPLOYEE_PASSWORD },
+  customer: { username: CUSTOMER_USER, password: CUSTOMER_PASSWORD }
+};
+
+/** Reuse sessions across tests to avoid BurstRateThrottle 429s on /login/. */
+const cachedSessions: Partial<Record<RoleName, { session: LoginSession; at: number }>> = {};
 const CACHE_MS = 10 * 60 * 1000;
 
 function sleep(ms: number) {
   return new Promise((r) => setTimeout(r, ms));
 }
 
-export async function apiLogin(request: APIRequestContext): Promise<LoginSession> {
-  if (cachedSession && Date.now() - cachedAt < CACHE_MS) {
-    return cachedSession;
+export async function apiLoginAs(
+  request: APIRequestContext,
+  role: RoleName = 'admin'
+): Promise<LoginSession> {
+  const cached = cachedSessions[role];
+  if (cached && Date.now() - cached.at < CACHE_MS) {
+    return cached.session;
   }
 
+  const creds = ROLE_CREDS[role];
   let lastBody: any = {};
   let response: Awaited<ReturnType<APIRequestContext['post']>> | null = null;
 
   for (let attempt = 0; attempt < 5; attempt++) {
     response = await request.post(`${BACKEND_URL}/api/v3/login/`, {
-      data: { username: ADMIN_USER, password: ADMIN_PASSWORD }
+      data: { username: creds.username, password: creds.password }
     });
     lastBody = await response.json().catch(() => ({}));
     if (response.status() === 429) {
@@ -49,16 +65,16 @@ export async function apiLogin(request: APIRequestContext): Promise<LoginSession
 
   expect(
     response!.ok(),
-    `login failed: ${response!.status()} ${JSON.stringify(lastBody)}`
+    `${role} login failed: ${response!.status()} ${JSON.stringify(lastBody)}`
   ).toBeTruthy();
 
   const data = lastBody?.data || lastBody;
   const accessToken = data?.access_token || lastBody?.access_token;
-  expect(accessToken, 'access_token missing from login response').toBeTruthy();
+  expect(accessToken, `${role} access_token missing from login response`).toBeTruthy();
 
   let salonId = data?.salon_id ?? DEFAULT_SALON_ID;
   let branchId = data?.branch_id ?? DEFAULT_BRANCH_ID;
-  let group = data?.group || 'Admin';
+  let group = data?.group || role;
   let subscriptionName = data?.subscription_name || 'Premium';
   let userId = data?.user_id || data?.id || lastBody?.id;
 
@@ -66,7 +82,7 @@ export async function apiLogin(request: APIRequestContext): Promise<LoginSession
   if (Number(salonId) < 0) salonId = DEFAULT_SALON_ID;
   if (Number(branchId) < 0) branchId = DEFAULT_BRANCH_ID;
 
-  cachedSession = {
+  const session: LoginSession = {
     accessToken,
     userId,
     salonId,
@@ -75,14 +91,20 @@ export async function apiLogin(request: APIRequestContext): Promise<LoginSession
     subscriptionName: subscriptionName == null ? 'Premium' : String(subscriptionName),
     raw: lastBody
   };
-  cachedAt = Date.now();
-  return cachedSession;
+  cachedSessions[role] = { session, at: Date.now() };
+  return session;
+}
+
+/** Default admin login (back-compat with existing specs). */
+export async function apiLogin(request: APIRequestContext): Promise<LoginSession> {
+  return apiLoginAs(request, 'admin');
 }
 
 /** Force a fresh login (e.g. after DB wipe mid-suite). */
 export function clearLoginCache() {
-  cachedSession = null;
-  cachedAt = 0;
+  for (const key of Object.keys(cachedSessions) as RoleName[]) {
+    delete cachedSessions[key];
+  }
 }
 
 export function authHeaders(session: LoginSession) {

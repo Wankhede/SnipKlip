@@ -114,6 +114,12 @@ def getAllCustomers(request, column_name=None, column_value=None):
                 gender=gender
             )
             user.save()
+            try:
+                from django.contrib.auth.models import Group
+                customer_group, _ = Group.objects.get_or_create(name='Customer')
+                user.groups.add(customer_group)
+            except Exception:
+                pass
 
             user = User.objects.get(username=username)
             customer = Customer.objects.create(
