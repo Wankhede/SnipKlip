@@ -1,27 +1,18 @@
 #Requires -Version 5.1
 <#
 .SYNOPSIS
-  Flawless single-click SnipKlip launcher for Windows (VS Code / PowerShell).
+  Single-click SnipKlip launcher for Windows (VS Code / PowerShell).
 
 .DESCRIPTION
-  On every start:
-    1. Verifies Python + Node on PATH (clear download links if missing)
-    2. Creates .venv if needed; always (re)installs Python + npm packages
-    3. Writes .env / .env.local with localhost URLs
-    4. Reclaims reserved ports 8082/8083 if another process holds them
-    5. Starts Django + Next.js and health-checks via http://localhost:...
+  Fixes common Windows failures:
+    - False "next/react not installed" (verifies via node require, not Unix bin bits)
+    - TCP connection refused (waits for LISTEN, avoids stdout/stderr same-file redirect crash)
+    - npm.cmd / PATH resolution
+    - localhost-only browser URLs (not 127.0.0.1)
 
-  Reserved ports (do not swap):
-    Backend  (Django)  → http://localhost:8082
-    Frontend (Next.js) → http://localhost:8083
-
-.PARAMETER Command
-  start | stop | status | restart
-
-.EXAMPLE
-  .\run-local.bat
-  .\run-local.ps1 start
-  .\run-local.ps1 stop
+  Ports:
+    Backend  → http://localhost:8082
+    Frontend → http://localhost:8083
 #>
 [CmdletBinding()]
 param(
@@ -31,16 +22,20 @@ param(
 )
 
 $ErrorActionPreference = 'Stop'
-[Console]::OutputEncoding = [System.Text.Encoding]::UTF8
+try { [Console]::OutputEncoding = [System.Text.Encoding]::UTF8 } catch { }
 
-# ---- reserved ports ----
+# Bypass corporate proxies for local health checks / NextAuth loopbacks
+$env:NO_PROXY = 'localhost,127.0.0.1,::1'
+$env:no_proxy = $env:NO_PROXY
+[System.Net.WebRequest]::DefaultWebProxy = $null
+
 $BackendPort  = 8082
 $FrontendPort = 8083
-$PublicHost   = 'localhost'   # always advertise / call via localhost (not 127.0.0.1)
-$BindHost     = '0.0.0.0'     # listen on all interfaces so localhost resolves cleanly
+$PublicHost   = 'localhost'
+$BindHost     = '0.0.0.0'
 
 $ScriptRoot = if ($PSScriptRoot) { $PSScriptRoot } else { Split-Path -Parent $MyInvocation.MyCommand.Path }
-$BackendDir = $ScriptRoot
+$BackendDir = (Resolve-Path $ScriptRoot).Path
 if (-not (Test-Path (Join-Path $BackendDir 'manage.py'))) {
   Write-Host 'ERROR: Run from the SnipKlip backend repo root (manage.py missing).' -ForegroundColor Red
   exit 1
@@ -58,18 +53,31 @@ function Test-Cmd([string]$Name) {
   return [bool](Get-Command $Name -ErrorAction SilentlyContinue)
 }
 
+function Get-NpmCmd {
+  $cmd = Get-Command 'npm.cmd' -ErrorAction SilentlyContinue
+  if ($cmd) { return $cmd.Source }
+  $cmd = Get-Command 'npm' -ErrorAction SilentlyContinue
+  if ($cmd) { return $cmd.Source }
+  return $null
+}
+
+function Get-NodeCmd {
+  $cmd = Get-Command 'node.exe' -ErrorAction SilentlyContinue
+  if ($cmd) { return $cmd.Source }
+  $cmd = Get-Command 'node' -ErrorAction SilentlyContinue
+  if ($cmd) { return $cmd.Source }
+  return $null
+}
+
 function Resolve-PythonLauncher {
-  # Prefer the Windows Python launcher, then python, then python3.
   if (Test-Cmd 'py') {
     try {
-      $ver = & py -3 -c "import sys; print(f'{sys.version_info.major}.{sys.version_info.minor}')" 2>$null
+      $ver = & py -3 -c "import sys; print('%d.%d' % (sys.version_info.major, sys.version_info.minor))" 2>$null
       if ($ver) { return @{ Exe = 'py'; Args = @('-3') } }
     } catch { }
   }
   foreach ($name in @('python', 'python3')) {
-    if (Test-Cmd $name) {
-      return @{ Exe = $name; Args = @() }
-    }
+    if (Test-Cmd $name) { return @{ Exe = $name; Args = @() } }
   }
   return $null
 }
@@ -85,9 +93,8 @@ function Resolve-FrontendDir {
   ) | Where-Object { $_ }
   foreach ($c in $candidates) {
     try {
-      if (Test-Path (Join-Path $c 'package.json')) {
-        return (Resolve-Path $c).Path
-      }
+      $pkg = Join-Path $c 'package.json'
+      if (Test-Path -LiteralPath $pkg) { return (Resolve-Path -LiteralPath $c).Path }
     } catch { }
   }
   return $null
@@ -96,16 +103,12 @@ function Resolve-FrontendDir {
 function Get-PortOwnerPids([int]$Port) {
   $pids = New-Object System.Collections.Generic.List[int]
   try {
-    $conns = Get-NetTCPConnection -LocalPort $Port -State Listen -ErrorAction SilentlyContinue
-    foreach ($c in @($conns)) {
+    foreach ($c in @(Get-NetTCPConnection -LocalPort $Port -State Listen -ErrorAction SilentlyContinue)) {
       if ($c.OwningProcess -and $c.OwningProcess -ne 0) { [void]$pids.Add([int]$c.OwningProcess) }
     }
   } catch { }
-
   if ($pids.Count -eq 0) {
-    # netstat fallback (works without admin / NetTCP module)
-    $lines = & netstat -ano 2>$null | Select-String -Pattern ":$Port\s+.*LISTENING"
-    foreach ($line in $lines) {
+    foreach ($line in @(& netstat -ano 2>$null | Select-String -Pattern ":$Port\s+.*LISTENING")) {
       if ($line.Line -match '\s+(\d+)\s*$') {
         $id = [int]$Matches[1]
         if ($id -ne 0) { [void]$pids.Add($id) }
@@ -116,44 +119,58 @@ function Get-PortOwnerPids([int]$Port) {
 }
 
 function Claim-Port {
-  param(
-    [Parameter(Mandatory = $true)][int]$Port,
-    [int]$Retries = 12
-  )
+  param([Parameter(Mandatory = $true)][int]$Port, [int]$Retries = 15)
   for ($i = 1; $i -le $Retries; $i++) {
-    $owners = Get-PortOwnerPids $Port
-    if (-not $owners -or $owners.Count -eq 0) {
+    $owners = @(Get-PortOwnerPids $Port)
+    if ($owners.Count -eq 0) {
       Write-Ok "Port $Port is free"
       return
     }
     foreach ($procId in $owners) {
       $name = ''
       try { $name = (Get-Process -Id $procId -ErrorAction SilentlyContinue).ProcessName } catch { }
-      Write-Warn "Port $Port occupied by pid $procId ($name) — reclaiming for SnipKlip"
-      # taskkill /T kills the whole process tree (nested powershell → python/node)
+      Write-Warn "Port $Port occupied by pid $procId ($name) — reclaiming"
       & taskkill.exe /F /T /PID $procId 2>$null | Out-Null
       Stop-Process -Id $procId -Force -ErrorAction SilentlyContinue
     }
-    Start-Sleep -Milliseconds 700
+    Start-Sleep -Milliseconds 800
   }
-  $still = Get-PortOwnerPids $Port
-  if ($still -and $still.Count -gt 0) {
-    Die "Could not free port $Port (still held by pid(s): $($still -join ',')). Close that app or reboot, then retry."
+  $still = @(Get-PortOwnerPids $Port)
+  if ($still.Count -gt 0) {
+    Die "Could not free port $Port (pids: $($still -join ',')). Close that app, then retry."
   }
+}
+
+function Wait-PortListen([int]$Port, [int]$Attempts = 90) {
+  for ($i = 1; $i -le $Attempts; $i++) {
+    if (@(Get-PortOwnerPids $Port).Count -gt 0) {
+      Write-Ok "TCP LISTEN on port $Port"
+      return $true
+    }
+    Start-Sleep -Seconds 1
+  }
+  Write-Host "FAIL TCP LISTEN never appeared on port $Port" -ForegroundColor Red
+  return $false
 }
 
 function Wait-Http([string]$Name, [string]$Url, [int]$Expected = 200, [int]$Attempts = 120) {
   for ($i = 1; $i -le $Attempts; $i++) {
     try {
-      # Force localhost DNS / avoid proxy surprises
-      $resp = Invoke-WebRequest -Uri $Url -UseBasicParsing -TimeoutSec 4 -MaximumRedirection 5
-      if ([int]$resp.StatusCode -eq $Expected) {
-        Write-Ok "$Name ($Expected) $Url"
-        return $true
+      # Prefer curl.exe on Win10+ (more reliable than Invoke-WebRequest behind proxies)
+      if (Test-Cmd 'curl.exe') {
+        $code = & curl.exe -s -o NUL -w '%{http_code}' --max-time 4 $Url 2>$null
+        if ($code -eq "$Expected") {
+          Write-Ok "$Name ($Expected) $Url"
+          return $true
+        }
+      } else {
+        $resp = Invoke-WebRequest -Uri $Url -UseBasicParsing -TimeoutSec 4
+        if ([int]$resp.StatusCode -eq $Expected) {
+          Write-Ok "$Name ($Expected) $Url"
+          return $true
+        }
       }
-    } catch {
-      # keep polling
-    }
+    } catch { }
     Start-Sleep -Seconds 1
   }
   Write-Host "FAIL $Name expected $Expected at $Url" -ForegroundColor Red
@@ -166,95 +183,146 @@ function Assert-Prereqs {
     Die @"
 Python was not found on PATH.
 Install Python 3.10 or 3.11 from https://www.python.org/downloads/
-IMPORTANT: enable "Add python.exe to PATH", then close and reopen VS Code / PowerShell.
+Enable "Add python.exe to PATH", then reopen VS Code / PowerShell.
 "@
   }
-  if (-not (Test-Cmd 'node') -or -not (Test-Cmd 'npm')) {
+  $nodePath = Get-NodeCmd
+  $npmPath = Get-NpmCmd
+  if (-not $nodePath -or -not $npmPath) {
     Die @"
 Node.js / npm was not found on PATH.
 Install Node.js 18 LTS from https://nodejs.org/en/download
-Then close and reopen VS Code / PowerShell.
+Then reopen VS Code / PowerShell.
 "@
   }
 
-  $pyArgs = $py.Args + @('-c', 'import sys; print(f"{sys.version_info.major}.{sys.version_info.minor}.{sys.version_info.micro}")')
-  $pyVer = & $py.Exe @pyArgs
-  $nodeVer = (& node -v).Trim()
-  $npmVer = (& npm -v).Trim()
-  Write-Ok "Python $pyVer | Node $nodeVer | npm $npmVer"
+  $pyArgs = $py.Args + @('-c', 'import sys; print("%d.%d.%d" % sys.version_info[:3])')
+  $pyVer = (& $py.Exe @pyArgs).Trim()
+  $nodeVer = (& $nodePath -v).Trim()
+  $npmVer = (& $npmPath -v).Trim()
+  Write-Ok "Python $pyVer | Node $nodeVer ($nodePath) | npm $npmVer"
 
-  $nodeMajor = [int]((& node -p "process.versions.node.split('.')[0]").Trim())
+  $nodeMajor = [int]((& $nodePath -p "process.versions.node.split('.')[0]").Trim())
   if ($nodeMajor -ne 18) {
-    Write-Warn "Host Node is $nodeVer — Next.js 12 prefers Node 18. Launcher will use npx node@18."
+    Write-Warn "Host Node is $nodeVer — Next.js 12 prefers Node 18. Will prefer npx node@18 when launching."
   }
-  return $py
+  return @{
+    Py = $py
+    Node = $nodePath
+    Npm = $npmPath
+    NodeMajor = $nodeMajor
+  }
 }
 
 function Get-VenvPython {
-  $candidates = @(
-    (Join-Path $BackendDir '.venv\Scripts\python.exe'),
-    (Join-Path (Split-Path $BackendDir -Parent) '.venv\Scripts\python.exe'),
-    (Join-Path $BackendDir 'venv\Scripts\python.exe')
-  )
-  foreach ($c in $candidates) {
-    if (Test-Path $c) { return $c }
+  foreach ($c in @(
+      (Join-Path $BackendDir '.venv\Scripts\python.exe'),
+      (Join-Path (Split-Path $BackendDir -Parent) '.venv\Scripts\python.exe'),
+      (Join-Path $BackendDir 'venv\Scripts\python.exe')
+    )) {
+    if (Test-Path -LiteralPath $c) { return (Resolve-Path -LiteralPath $c).Path }
   }
   return $null
 }
 
-function Ensure-VenvAndPackages([hashtable]$PyLauncher) {
+function Ensure-VenvAndPackages([hashtable]$Tools) {
   Write-Step 'Ensuring Python virtualenv + installing requirements'
   $venvPy = Get-VenvPython
   if (-not $venvPy) {
     $venvPath = Join-Path $BackendDir '.venv'
     Write-Step "Creating $venvPath"
-    $createArgs = $PyLauncher.Args + @('-m', 'venv', $venvPath)
-    & $PyLauncher.Exe @createArgs
+    $createArgs = $Tools.Py.Args + @('-m', 'venv', $venvPath)
+    & $Tools.Py.Exe @createArgs
     $venvPy = Join-Path $venvPath 'Scripts\python.exe'
-    if (-not (Test-Path $venvPy)) { Die "Failed to create venv at $venvPath" }
+    if (-not (Test-Path -LiteralPath $venvPy)) { Die "Failed to create venv at $venvPath" }
   }
 
-  # Prepend venv to PATH for this session (pip/scripts resolution)
-  $venvScripts = Join-Path (Split-Path $venvPy -Parent) ''
+  $venvScripts = Split-Path $venvPy -Parent
   $env:Path = "$venvScripts;$env:Path"
 
-  & $venvPy -m pip install --upgrade "pip<25" "setuptools<70" wheel
-  & $venvPy -m pip install --prefer-binary -r (Join-Path $BackendDir 'requirements.txt')
+  & $venvPy -m pip install --upgrade "pip<25" "setuptools<70" wheel | Out-Host
+  & $venvPy -m pip install --prefer-binary -r (Join-Path $BackendDir 'requirements.txt') | Out-Host
   if ($LASTEXITCODE -ne 0) {
-    & $venvPy -c "import django" 2>$null
+    & $venvPy -c "import django" 2>$null | Out-Null
     if ($LASTEXITCODE -ne 0) {
       Die 'pip install failed and Django is not importable. Prefer Python 3.10 or 3.11.'
     }
-    Write-Warn 'pip install reported errors, but Django is importable — continuing'
+    Write-Warn 'pip reported errors, but Django imports — continuing'
   }
   Write-Ok "Python packages ready ($venvPy)"
   return $venvPy
 }
 
-function Ensure-FrontendPackages([string]$FrontendDir) {
-  Write-Step 'Installing frontend packages (npm install --legacy-peer-deps)'
+function Test-FrontendModules([string]$FrontendDir, [string]$NodePath) {
+  # Real Windows-safe check: can Node resolve next + react + react-dom?
+  $probe = @'
+const mods = ["next", "react", "react-dom"];
+for (const m of mods) {
+  try { require.resolve(m); }
+  catch (e) { console.error("MISSING:" + m); process.exit(2); }
+}
+console.log("READY");
+'@
+  $probeFile = Join-Path $env:TEMP ("snipklip-probe-{0}.js" -f [guid]::NewGuid().ToString('N'))
+  Set-Content -Path $probeFile -Value $probe -Encoding ASCII
+  try {
+    Push-Location $FrontendDir
+    $out = & $NodePath $probeFile 2>&1 | Out-String
+    Pop-Location
+    if ($out -match 'READY') { return $true }
+    Write-Warn ("Module probe failed: " + $out.Trim())
+    return $false
+  } catch {
+    try { Pop-Location } catch { }
+    Write-Warn $_.Exception.Message
+    return $false
+  } finally {
+    Remove-Item $probeFile -Force -ErrorAction SilentlyContinue
+  }
+}
+
+function Ensure-FrontendPackages([string]$FrontendDir, [hashtable]$Tools) {
+  Write-Step 'Checking / installing frontend packages (next, react, …)'
+
+  $alreadyOk = Test-FrontendModules $FrontendDir $Tools.Node
+  if ($alreadyOk) {
+    Write-Ok 'next / react / react-dom already resolve — refreshing with npm install anyway'
+  } else {
+    Write-Warn 'Frontend modules not resolvable yet — running npm install'
+  }
+
   Push-Location $FrontendDir
   try {
-    # Clear broken installs if next binary is missing
-    $nextBin = Join-Path $FrontendDir 'node_modules\next\dist\bin\next'
-    if ((Test-Path (Join-Path $FrontendDir 'node_modules')) -and -not (Test-Path $nextBin)) {
-      Write-Warn 'Broken node_modules detected — removing and reinstalling'
-      Remove-Item -Recurse -Force (Join-Path $FrontendDir 'node_modules') -ErrorAction SilentlyContinue
+    # Use cmd.exe so npm.cmd lifecycle scripts work reliably on Windows
+    $npm = $Tools.Npm
+    $args = @('install', '--legacy-peer-deps', '--no-fund', '--no-audit')
+    Write-Host "Running: $npm $($args -join ' ')"
+    $p = Start-Process -FilePath $npm -ArgumentList $args -WorkingDirectory $FrontendDir -Wait -PassThru -NoNewWindow
+    if ($p.ExitCode -ne 0) {
+      Die "npm install failed (exit $($p.ExitCode)). Delete node_modules and retry, or run: npm install --legacy-peer-deps"
     }
-    & npm.cmd install --legacy-peer-deps
-    if ($LASTEXITCODE -ne 0) { Die "npm install failed (exit $LASTEXITCODE)" }
-    if (-not (Test-Path $nextBin)) { Die 'Next.js binary missing after npm install' }
   } finally {
     Pop-Location
   }
-  Write-Ok 'Frontend packages installed'
+
+  if (-not (Test-FrontendModules $FrontendDir $Tools.Node)) {
+    Die @"
+npm install finished but Node still cannot require('next') / require('react').
+Frontend dir: $FrontendDir
+Try manually:
+  cd "$FrontendDir"
+  rmdir /s /q node_modules
+  npm install --legacy-peer-deps
+"@
+  }
+  Write-Ok 'Frontend packages verified (next + react + react-dom)'
 }
 
 function Sync-BackendEnv {
   $envFile = Join-Path $BackendDir '.env'
   $example = Join-Path $BackendDir '.env.example'
-  if (-not (Test-Path $envFile)) {
-    if (-not (Test-Path $example)) { Die 'Missing .env.example' }
+  if (-not (Test-Path -LiteralPath $envFile)) {
+    if (-not (Test-Path -LiteralPath $example)) { Die 'Missing .env.example' }
     Copy-Item $example $envFile
     Write-Ok 'Created .env from .env.example'
   }
@@ -265,10 +333,10 @@ function Sync-BackendEnv {
     'CORS_ALLOWED_ORIGINS'   = $cors
     'CORS_ALLOW_ALL_ORIGINS' = 'True'
     'DEBUG'                  = 'True'
-    'ALLOWED_HOSTS'          = 'localhost,127.0.0.1,0.0.0.0,testserver'
+    'ALLOWED_HOSTS'          = 'localhost,127.0.0.1,0.0.0.0,testserver,[::1]'
     'BACKEND_PORT'           = "$BackendPort"
   }
-  $lines = @(Get-Content $envFile -ErrorAction SilentlyContinue)
+  $lines = @(Get-Content -LiteralPath $envFile -ErrorAction SilentlyContinue)
   foreach ($key in $map.Keys) {
     $found = $false
     for ($i = 0; $i -lt $lines.Count; $i++) {
@@ -280,22 +348,22 @@ function Sync-BackendEnv {
     }
     if (-not $found) { $lines += "$key=$($map[$key])" }
   }
-  Set-Content -Path $envFile -Value $lines -Encoding UTF8
+  Set-Content -LiteralPath $envFile -Value $lines -Encoding UTF8
   Write-Ok "Backend env → FRONTEND_LINK=$frontendOrigin"
 }
 
 function Sync-FrontendEnv([string]$FrontendDir) {
   $envFile = Join-Path $FrontendDir '.env.local'
   $example = Join-Path $FrontendDir '.env.example'
-  if (-not (Test-Path $envFile)) {
-    if (-not (Test-Path $example)) { Die 'Missing frontend .env.example' }
+  if (-not (Test-Path -LiteralPath $envFile)) {
+    if (-not (Test-Path -LiteralPath $example)) { Die 'Missing frontend .env.example' }
     Copy-Item $example $envFile
     $secret = -join ((48..57) + (65..90) + (97..122) | Get-Random -Count 48 | ForEach-Object { [char]$_ })
     $jwt    = -join ((48..57) + (65..90) + (97..122) | Get-Random -Count 48 | ForEach-Object { [char]$_ })
-    $raw = Get-Content $envFile -Raw
+    $raw = Get-Content -LiteralPath $envFile -Raw
     $raw = $raw -replace 'NEXTAUTH_SECRET=.*', "NEXTAUTH_SECRET=$secret"
     $raw = $raw -replace 'JWT_SECRET=.*', "JWT_SECRET=$jwt"
-    Set-Content -Path $envFile -Value $raw -Encoding UTF8 -NoNewline
+    Set-Content -LiteralPath $envFile -Value $raw -Encoding UTF8 -NoNewline
     Write-Ok 'Created .env.local with local secrets'
   }
 
@@ -306,7 +374,7 @@ function Sync-FrontendEnv([string]$FrontendDir) {
     'NEXT_PUBLIC_FRONTEND_URL' = $frontendUrl
     'NEXTAUTH_URL'             = $frontendUrl
   }
-  $lines = @(Get-Content $envFile)
+  $lines = @(Get-Content -LiteralPath $envFile)
   foreach ($key in $map.Keys) {
     $found = $false
     for ($i = 0; $i -lt $lines.Count; $i++) {
@@ -318,8 +386,31 @@ function Sync-FrontendEnv([string]$FrontendDir) {
     }
     if (-not $found) { $lines += "$key=$($map[$key])" }
   }
-  Set-Content -Path $envFile -Value $lines -Encoding UTF8
+  Set-Content -LiteralPath $envFile -Value $lines -Encoding UTF8
   Write-Ok "Frontend env → backend $backendUrl | self $frontendUrl"
+}
+
+function Start-LoggedCmd {
+  param(
+    [Parameter(Mandatory = $true)][string]$FilePath,
+    [Parameter(Mandatory = $true)][string[]]$ArgumentList,
+    [Parameter(Mandatory = $true)][string]$WorkingDirectory,
+    [Parameter(Mandatory = $true)][string]$LogPath
+  )
+  # CRITICAL on Windows: Start-Process cannot redirect stdout+stderr to the SAME file.
+  # Use cmd.exe so both streams go to one log without that crash.
+  if (Test-Path -LiteralPath $LogPath) { Remove-Item -LiteralPath $LogPath -Force -ErrorAction SilentlyContinue }
+
+  $argString = ($ArgumentList | ForEach-Object {
+      if ($_ -match '[\s"]') { '"' + ($_ -replace '"', '\"') + '"' } else { $_ }
+    }) -join ' '
+
+  $wrapper = "cd /d `"$WorkingDirectory`" && `"$FilePath`" $argString >> `"$LogPath`" 2>&1"
+  $proc = Start-Process -FilePath 'cmd.exe' `
+    -ArgumentList @('/d', '/c', $wrapper) `
+    -WorkingDirectory $WorkingDirectory `
+    -PassThru -WindowStyle Hidden
+  return $proc
 }
 
 function Start-BackendProcess([string]$VenvPython) {
@@ -340,49 +431,49 @@ function Start-BackendProcess([string]$VenvPython) {
     Pop-Location
   }
 
-  Write-Step "Starting Django on ${BindHost}:${BackendPort} (URL http://${PublicHost}:${BackendPort})"
-  if (Test-Path $BackendLog) { Remove-Item $BackendLog -Force -ErrorAction SilentlyContinue }
-
-  # Start python directly (not nested powershell) so port reclaim can kill cleanly
-  $argList = @(
-    'manage.py', 'runserver', "${BindHost}:${BackendPort}",
-    '--noreload', '--settings=app.settings.local'
-  )
-  $proc = Start-Process -FilePath $VenvPython `
-    -ArgumentList $argList `
+  Write-Step "Starting Django → http://${PublicHost}:${BackendPort}"
+  $proc = Start-LoggedCmd -FilePath $VenvPython `
+    -ArgumentList @('manage.py', 'runserver', "${BindHost}:${BackendPort}", '--noreload', '--settings=app.settings.local') `
     -WorkingDirectory $BackendDir `
-    -RedirectStandardOutput $BackendLog `
-    -RedirectStandardError $BackendLog `
-    -PassThru -WindowStyle Hidden
+    -LogPath $BackendLog
 
-  Set-Content -Path (Join-Path $RunDir 'backend.pid') -Value $proc.Id
+  Set-Content -LiteralPath (Join-Path $RunDir 'backend.pid') -Value $proc.Id
   Write-Ok "Backend pid $($proc.Id) → http://${PublicHost}:${BackendPort}"
 }
 
-function Start-FrontendProcess([string]$FrontendDir) {
+function Start-FrontendProcess([string]$FrontendDir, [hashtable]$Tools) {
   Claim-Port -Port $FrontendPort
   Sync-FrontendEnv $FrontendDir
 
-  Write-Step "Starting Next.js on port $FrontendPort (URL http://${PublicHost}:${FrontendPort})"
-  if (Test-Path $FrontendLog) { Remove-Item $FrontendLog -Force -ErrorAction SilentlyContinue }
+  Write-Step "Starting Next.js → http://${PublicHost}:${FrontendPort}"
 
-  $nodeMajor = [int]((& node -p "process.versions.node.split('.')[0]").Trim())
-  if ($nodeMajor -eq 18) {
-    $filePath = (Get-Command node).Source
-    $args = @('node_modules\next\dist\bin\next', 'dev', '-p', "$FrontendPort", '-H', 'localhost')
+  # Prefer npm run dev (uses package.json) — most reliable on Windows.
+  # Force hostname localhost so NextAuth SSR fetch to localhost works.
+  $npm = $Tools.Npm
+  $node = $Tools.Node
+  $nextCli = Join-Path $FrontendDir 'node_modules\next\dist\bin\next'
+
+  if ($Tools.NodeMajor -eq 18 -and (Test-Path -LiteralPath $nextCli)) {
+    $file = $node
+    $args = @($nextCli, 'dev', '-p', "$FrontendPort", '-H', 'localhost')
+  } elseif ($Tools.NodeMajor -eq 18) {
+    # Fall back to npm script
+    $file = $npm
+    $args = @('run', 'dev', '--', '-H', 'localhost')
   } else {
-    $filePath = (Get-Command npx.cmd).Source
-    $args = @('--yes', '--package=node@18.20.8', 'node', 'node_modules\next\dist\bin\next', 'dev', '-p', "$FrontendPort", '-H', 'localhost')
+    # Host Node is not 18 — run Next under portable Node 18
+    $npx = (Get-Command 'npx.cmd' -ErrorAction SilentlyContinue)
+    if (-not $npx) { Die 'npx.cmd not found (install Node 18 LTS).' }
+    $file = $npx.Source
+    $args = @('--yes', '--package=node@18.20.8', 'node', $nextCli, 'dev', '-p', "$FrontendPort", '-H', 'localhost')
   }
 
-  $proc = Start-Process -FilePath $filePath `
+  $proc = Start-LoggedCmd -FilePath $file `
     -ArgumentList $args `
     -WorkingDirectory $FrontendDir `
-    -RedirectStandardOutput $FrontendLog `
-    -RedirectStandardError $FrontendLog `
-    -PassThru -WindowStyle Hidden
+    -LogPath $FrontendLog
 
-  Set-Content -Path (Join-Path $RunDir 'frontend.pid') -Value $proc.Id
+  Set-Content -LiteralPath (Join-Path $RunDir 'frontend.pid') -Value $proc.Id
   Write-Ok "Frontend pid $($proc.Id) → http://${PublicHost}:${FrontendPort}"
 }
 
@@ -390,13 +481,13 @@ function Stop-All {
   Write-Step 'Stopping SnipKlip + reclaiming reserved ports'
   foreach ($name in @('backend.pid', 'frontend.pid')) {
     $pidFile = Join-Path $RunDir $name
-    if (Test-Path $pidFile) {
-      $procId = (Get-Content $pidFile | Select-Object -First 1)
+    if (Test-Path -LiteralPath $pidFile) {
+      $procId = (Get-Content -LiteralPath $pidFile | Select-Object -First 1)
       if ($procId) {
         & taskkill.exe /F /T /PID $procId 2>$null | Out-Null
         Stop-Process -Id ([int]$procId) -Force -ErrorAction SilentlyContinue
       }
-      Remove-Item $pidFile -Force -ErrorAction SilentlyContinue
+      Remove-Item -LiteralPath $pidFile -Force -ErrorAction SilentlyContinue
     }
   }
   Claim-Port -Port $BackendPort -Retries 8
@@ -404,11 +495,11 @@ function Stop-All {
 }
 
 function Show-Status {
-  $b = Get-PortOwnerPids $BackendPort
-  $f = Get-PortOwnerPids $FrontendPort
-  if ($b) { Write-Ok "backend:  listening on $BackendPort (pid $($b -join ',')) → http://${PublicHost}:${BackendPort}" }
+  $b = @(Get-PortOwnerPids $BackendPort)
+  $f = @(Get-PortOwnerPids $FrontendPort)
+  if ($b.Count) { Write-Ok "backend:  LISTEN $BackendPort (pid $($b -join ',')) → http://${PublicHost}:${BackendPort}" }
   else { Write-Warn 'backend:  stopped' }
-  if ($f) { Write-Ok "frontend: listening on $FrontendPort (pid $($f -join ',')) → http://${PublicHost}:${FrontendPort}" }
+  if ($f.Count) { Write-Ok "frontend: LISTEN $FrontendPort (pid $($f -join ',')) → http://${PublicHost}:${FrontendPort}" }
   else { Write-Warn 'frontend: stopped' }
 }
 
@@ -443,24 +534,30 @@ Or set:  `$env:FRONTEND_DIR = 'D:\path\to\snipklip-frontend'
 Write-Ok "Backend:  $BackendDir"
 Write-Ok "Frontend: $FrontendDir"
 
-$pyLauncher = Assert-Prereqs
-$venvPython = Ensure-VenvAndPackages $pyLauncher
-Ensure-FrontendPackages $FrontendDir
+$Tools = Assert-Prereqs
+$venvPython = Ensure-VenvAndPackages $Tools
+Ensure-FrontendPackages $FrontendDir $Tools
 
 Stop-All
 try {
   Start-BackendProcess $venvPython
+  if (-not (Wait-PortListen $BackendPort 90)) {
+    if (Test-Path -LiteralPath $BackendLog) { Get-Content -LiteralPath $BackendLog -Tail 60 }
+    Die "Backend never opened TCP port $BackendPort"
+  }
   if (-not (Wait-Http 'Django schema' "http://${PublicHost}:${BackendPort}/api/schema/" 200 120)) {
-    Write-Host '---- backend.log (tail) ----' -ForegroundColor Yellow
-    if (Test-Path $BackendLog) { Get-Content $BackendLog -Tail 50 }
-    Die "Backend failed health-check on http://${PublicHost}:${BackendPort}"
+    if (Test-Path -LiteralPath $BackendLog) { Get-Content -LiteralPath $BackendLog -Tail 60 }
+    Die "Backend HTTP health-check failed on http://${PublicHost}:${BackendPort}"
   }
 
-  Start-FrontendProcess $FrontendDir
+  Start-FrontendProcess $FrontendDir $Tools
+  if (-not (Wait-PortListen $FrontendPort 120)) {
+    if (Test-Path -LiteralPath $FrontendLog) { Get-Content -LiteralPath $FrontendLog -Tail 80 }
+    Die "Frontend never opened TCP port $FrontendPort (see .run\frontend.log)"
+  }
   if (-not (Wait-Http 'Next.js login' "http://${PublicHost}:${FrontendPort}/login" 200 180)) {
-    Write-Host '---- frontend.log (tail) ----' -ForegroundColor Yellow
-    if (Test-Path $FrontendLog) { Get-Content $FrontendLog -Tail 50 }
-    Die "Frontend failed health-check on http://${PublicHost}:${FrontendPort}"
+    if (Test-Path -LiteralPath $FrontendLog) { Get-Content -LiteralPath $FrontendLog -Tail 80 }
+    Die "Frontend HTTP health-check failed on http://${PublicHost}:${FrontendPort}"
   }
 } catch {
   Write-Host $_.Exception.Message -ForegroundColor Red
@@ -474,9 +571,8 @@ Write-Host "  Backend:  http://${PublicHost}:${BackendPort}"
 Write-Host "  Schema:   http://${PublicHost}:${BackendPort}/api/schema/"
 Write-Host "  Frontend: http://${PublicHost}:${FrontendPort}"
 Write-Host "  Login:    http://${PublicHost}:${FrontendPort}/login"
-Write-Host "  Register: http://${PublicHost}:${FrontendPort}/register"
 Write-Host "  Logs:     $RunDir"
 Write-Host ''
-Write-Host 'Open those localhost URLs in your browser (not 127.0.0.1).' -ForegroundColor Cyan
+Write-Host 'Open http://localhost:8083 in your browser (not 127.0.0.1).' -ForegroundColor Cyan
 Write-Host 'Stop with:  .\run-local.bat stop' -ForegroundColor Cyan
 Show-Status

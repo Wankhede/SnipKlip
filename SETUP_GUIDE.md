@@ -167,8 +167,10 @@ Secrets (`NEXTAUTH_SECRET`, `JWT_SECRET`) are generated on first create.
 | `Python was not found` | Reinstall Python with PATH enabled; reopen terminal |
 | `Node.js / npm was not found` | Install Node 18 LTS; reopen terminal |
 | `Frontend repo not found` | Clone sibling `snipklip-frontend` or set `FRONTEND_DIR` |
-| Port already in use | `.\run-local.bat stop` then start again |
+| Port already in use | Launcher reclaim should free it; or `.\run-local.bat stop` |
 | `ExecutionPolicy` blocked | `powershell -ExecutionPolicy Bypass -File .\run-local.ps1` |
+| `TCP connection failed` / login 500 | Use **http://localhost:8083** (not 127.0.0.1). Pull latest launcher — it waits for TCP LISTEN and avoids a Windows stdout/stderr redirect crash. |
+| Says next/react not installed but `node_modules` exists | Pull latest launcher — it verifies with `require('next')` instead of Unix bin checks. Then `cd ..\snipklip-frontend && npm install --legacy-peer-deps`. |
 | `backports.zoneinfo` build error | Use Python 3.9+ (marker skips that package) |
 | Next.js odd crashes on Node 20+ | Install Node 18, or let the launcher use `npx node@18` |
 | CORS / auth loop | Confirm frontend is on **8083** and backend env `FRONTEND_LINK` matches |
