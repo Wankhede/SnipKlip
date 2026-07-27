@@ -22,34 +22,29 @@ Our mission is to transform the beauty and wellness industry through intuitive t
 
 ---
 
-# 🛠️ Project Setup
+# 🛠️ Project Setup (local)
+
+**Windows / macOS / Linux single-click:** see **[SETUP_GUIDE.md](./SETUP_GUIDE.md)**.
+
+Reserved ports: **Backend :8082** · **Frontend :8083**
+
+```bash
+# Clone backend + frontend as siblings, then:
+./run-local.sh          # macOS / Linux
+# or
+.\run-local.bat         # Windows
+```
+
+Legacy Ubuntu server notes remain below for production-style hosts.
 
 ```bash
 sudo apt-get update
-
 sudo apt-get install python3-pip python3-dev libpq-dev postgresql postgresql-contrib nginx
-
-sudo -u postgres psql
-
-sudo -H pip3 install --upgrade pip
-
-sudo -H pip3 install virtualenv
-
-virtualenv env
-
-source env/bin/activate
-
-pip install django gunicorn psycopg2
-
-cd snipklip/
-
+python3 -m venv .venv
+source .venv/bin/activate
 pip install -r requirements.txt
-
-python manage.py makemigrations backend --settings=app.settings.local
-
 python manage.py migrate --settings=app.settings.local
-
-python manage.py runserver 0.0.0.0:8000 --settings=app.settings.local
+python manage.py runserver 127.0.0.1:8082 --settings=app.settings.local
 ```
 
 ---

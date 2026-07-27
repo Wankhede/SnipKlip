@@ -22,3 +22,7 @@ app/media/
 django.log
 app/settings/local.py
 calendar-python-quickstart.json
+# Local launcher logs/pids
+.run/
+
+.venv/

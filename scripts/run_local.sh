@@ -6,12 +6,18 @@ cd "$ROOT"
 
 export DJANGO_SETTINGS_MODULE="${DJANGO_SETTINGS_MODULE:-app.settings.local}"
 
-if [[ -f "../.venv/bin/activate" ]]; then
+if [[ -f ".venv/bin/activate" ]]; then
+  # shellcheck disable=SC1091
+  source ".venv/bin/activate"
+elif [[ -f "../.venv/bin/activate" ]]; then
   # shellcheck disable=SC1091
   source "../.venv/bin/activate"
 elif [[ -f "env/bin/activate" ]]; then
   # shellcheck disable=SC1091
   source "env/bin/activate"
+elif [[ -f "venv/bin/activate" ]]; then
+  # shellcheck disable=SC1091
+  source "venv/bin/activate"
 fi
 
 python scripts/init_db.py --settings="$DJANGO_SETTINGS_MODULE"
